@@ -211,6 +211,7 @@
           Papa.parse('../data/datos_aledo.csv', {
       download: true,
       header: true,
+      delimiter: ';',
       complete: function(res) {
         res.data.forEach(function(d) {
           // Normalizar el tipo para evitar errores de mayúsculas/espacios

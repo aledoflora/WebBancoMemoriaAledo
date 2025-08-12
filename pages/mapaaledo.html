@@ -328,7 +328,7 @@
     }
 
     // Carga el CSV de datos y crea los marcadores
-    Papa.parse('../data/datos_aledo.csv',{download:true,header:true,complete:function(res){
+    Papa.parse('../data/datos_aledo.csv',{download:true,header:true,delimiter:';',complete:function(res){
       // Mostrar todos los tipos únicos encontrados para depuración
       var tiposUnicos = new Set();
       var iconKeys = Object.keys(icons);
