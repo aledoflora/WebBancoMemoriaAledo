@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memoria Oral - Banco de Memoria de Aledo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; line-height: 1.6; }
+    
+    /* Header */
+    header { background: #25A6F1; color: white; padding: 20px; text-align: center; }
+    header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+    .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    
+    /* Layout principal */
+    .main-container { display: flex; min-height: calc(100vh - 100px); }
+    
+    /* Columna izquierda */
+    .left-column { flex: 1; padding: 30px; }
+    .description { margin-bottom: 30px; }
+    .description h2 { color: #25A6F1; margin-bottom: 15px; font-size: 1.8rem; }
+    .description p { font-size: 1.1rem; line-height: 1.8; color: #555; }
+    
+    /* Mapa embebido */
+    .map-container { margin-bottom: 30px; }
+    .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
+    #main-map {
+      height: 400px;
+      position: relative;
+      z-index: 1;
+    }
+    /* Evitar que el mapa interfiera con el scroll de la página */
+    .leaflet-container {
+      touch-action: pan-x pan-y;
+    }
+    .leaflet-pane {
+      pointer-events: auto;
+    }
+    
+    /* Columna derecha - Galería */
+    .right-column { flex: 1; padding: 30px; background: #f8f9fa; }
+    .gallery h3 { color: #25A6F1; margin-bottom: 20px; font-size: 1.8rem; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    .gallery-item { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+    .gallery-item:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .gallery-item.highlighted { border: 3px solid #25A6F1; transform: translateY(-5px); box-shadow: 0 8px 20px rgba(37,166,241,0.3); }
+    .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
+    .gallery-item .info { padding: 15px; }
+    .gallery-item h4 { color: #25A6F1; margin-bottom: 8px; }
+    .gallery-item p { color: #666; font-size: 0.9rem; }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main-container { flex-direction: column; }
+      .left-column, .right-column { padding: 20px; }
+    }
+  </style>
+  <style>
+    @font-face {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman';
+      src: url('../assets/fonts/NeueHaasDisplayRoman.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'OCR A Extended', monospace !important;
+    }
+  </style>
+  <style>
+    .gallery {
+      background: #fff !important;
+    }
+    .gallery-item {
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: 3px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .gallery-item.memoria-oral:hover, .gallery-item.memoria-oral.highlighted { border-color: green !important; }
+    .gallery-item.patrimonio-material:hover, .gallery-item.patrimonio-material.highlighted { border-color: hotpink !important; }
+    .gallery-item.patrimonio-inmaterial:hover, .gallery-item.patrimonio-inmaterial.highlighted { border-color: #FFD600 !important; }
+    .gallery-item.iniciativas-culturales:hover, .gallery-item.iniciativas-culturales.highlighted { border-color: #25A6F1 !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='../index.html'">← Volver</button>
+    <h1>Memoria Oral</h1>
+  </header>
+  
+  <div class="main-container">
+    <div class="left-column">
+      <div class="description">
+        <h2>Las Voces que Narran Nuestra Historia</h2>
+        <p>La memoria oral de Aledo constituye un tesoro invaluable que preserva las experiencias, saberes y vivencias de quienes han sido testigos directos de la evolución de la localidad. A través de los relatos de nuestros mayores, accedemos a una historia viva que no se encuentra en los libros, sino en las voces de quienes han vivido y trabajado en estas tierras.</p>
+        <p>Cada testimonio representa un fragmento único de la memoria colectiva, transmitiendo no solo hechos históricos, sino también emociones, valores y formas de vida que han configurado la identidad cultural de Aledo. Esta sección rinde homenaje a quienes han dedicado su vida a oficios tradicionales y han sido guardianes de saberes ancestrales.</p>
+      </div>
+      
+      <div class="map-container">
+        <h3>Ubicación de los Testimonios</h3>
+        <div id="main-map"></div>
+      </div>
+    </div>
+    
+    <div class="right-column">
+      <div class="gallery">
+        <h3>Galería de Memoria Oral</h3>
+        <div class="gallery-grid">
+          <div class="gallery-item memoria-oral" data-name="Manuel Pérez">
+            <img src="https://via.placeholder.com/300x200/4CAF50/white?text=Manuel+Pérez" alt="Manuel Pérez - El molinero">
+            <div class="info">
+              <h4>Manuel Pérez - El molinero</h4>
+              <p>Hijo de quinta generación de molineros del río Argos, Manuel narra la historia de un oficio tradicional que ha sido fundamental en la economía local.</p>
+            </div>
+          </div>
+          
+          <div class="gallery-item memoria-oral" data-name="Carmen Ruiz">
+            <img src="https://via.placeholder.com/300x200/4CAF50/white?text=Carmen+Ruiz" alt="Carmen Ruiz - La panadera">
+            <div class="info">
+              <h4>Carmen Ruiz - La panadera</h4>
+              <p>Desde niña acompañaba a su madre a la vieja panadería, Carmen comparte los secretos de un oficio que ha alimentado a generaciones de aledanos.</p>
+            </div>
+          </div>
+          
+          <div class="gallery-item memoria-oral" data-name="José Martínez">
+            <img src="https://via.placeholder.com/300x200/4CAF50/white?text=José+Martínez" alt="José Martínez - El pastor">
+            <div class="info">
+              <h4>José Martínez - El pastor</h4>
+              <p>Pastor de ovejas merinas, José narra las rutas de trashumancia y la vida en el campo, oficio que ha mantenido viva la tradición ganadera.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
+  <script>
+    // Mapa principal centrado en Aledo con CartoDB Lite
+    var map = L.map('main-map', {
+      zoomControl: false,
+      minZoom: 5,
+      maxBounds: [
+        [27.5, -19.0],
+        [44.5, 5.0]
+      ]
+    }).setView([37.79456, -1.57295], 15);
+    
+    // Añadir controles de zoom
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+    
+    // Mapa base CartoDB Lite
+    var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      maxZoom:19, 
+      attribution:'© CartoDB'
+    }).addTo(map);
+    
+    // Iconos personalizados con bordes rectos
+    var icons = {
+      'memoria oral':         L.divIcon({className:'legend-color green',  iconSize:[14,14], iconAnchor:[7,7]}),
+      'patrimonio material':  L.divIcon({className:'legend-color pink',   iconSize:[14,14], iconAnchor:[7,7]}),
+      'patrimonio inmaterial':L.divIcon({className:'legend-color yellow', iconSize:[14,14], iconAnchor:[7,7]}),
+      'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]})
+    };
+    
+    // Solo mostrar marcadores de memoria oral
+    var oralMarkers = [];
+    
+    // Cargar datos y crear marcadores
+          Papa.parse('../data/datos_aledo.csv', {
+      download: true,
+      header: true,
+      complete: function(res) {
+        res.data.forEach(function(d) {
+          var tipo = (d.tipo || '').toLowerCase().trim();
+          if(tipo === 'memoria oral') {
+            var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
+            if(!isNaN(lat) && !isNaN(lng)) {
+              var marker = L.marker([lat, lng], {icon: icons['memoria oral']}).addTo(map);
+              marker.data = d;
+              oralMarkers.push(marker);
+              
+              // Evento hover para resaltar en galería (sin scroll)
+              marker.on('mouseover', function(e) {
+                L.DomEvent.stopPropagation(e);
+                highlightGalleryItem(d.name);
+              });
+              marker.on('mouseout', function(e) {
+                L.DomEvent.stopPropagation(e);
+                removeHighlight();
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    // Función para resaltar elemento en galería (sin scroll automático)
+    function highlightGalleryItem(name) {
+      removeHighlight();
+      var galleryItem = document.querySelector('.gallery-item[data-name="' + name + '"]');
+      if(galleryItem) {
+        galleryItem.classList.add('highlighted');
+      }
+    }
+    
+    // Función para quitar resaltado
+    function removeHighlight() {
+      document.querySelectorAll('.gallery-item.highlighted').forEach(function(item) {
+        item.classList.remove('highlighted');
+      });
+    }
+    
+    // Eventos para galería
+    document.querySelectorAll('.gallery-item').forEach(function(item) {
+      item.addEventListener('mouseenter', function() {
+        // Eliminado: resaltar marcador visualmente
+      });
+      item.addEventListener('mouseleave', function() {
+        // Eliminado: quitar resaltado visual
+      });
+    });
+  </script>
+  
+  <style>
+    .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
+    .green { background:green; }
+    .pink  { background:hotpink; }
+    .yellow{ background:yellow; }
+    .blue  { background:blue; }
+    
+    /* Estilo para marcadores resaltados */
+    .highlighted-marker {
+      box-shadow: 0 0 16px 6px #ffe066, 0 0 2px 2px #fff;
+      border-radius: 50%;
+      transform: scale(1.15) !important;
+      z-index: 1000 !important;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+  </style>
+</body>
+</html> 

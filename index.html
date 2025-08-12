@@ -1,0 +1,265 @@
+<!--
+  Banco de Memoria de Aledo - Página de aterrizaje (Landing Page)
+  Estructura principal: Hero con carrusel, opciones de navegación, mapa embebido y footer informativo.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Landing Banco de Memoria de Aledo</title>
+  <!-- Hoja de estilos de Leaflet para mapas -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    @font-face {
+      font-family: 'OCR A Extended';
+      src: url('assets/fonts/OCRAEXT.TTF') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'OCR A Extended', monospace !important;
+    }
+    /* Reset básico para evitar inconsistencias entre navegadores */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; overflow-x: hidden; }
+    body {
+      font-family: 'Izmir Medium', sans-serif !important;
+    }
+    body {
+      background: #fff !important;
+    }
+    .option {
+      border-radius: 0 !important;
+    }
+    .option {
+      box-shadow: none !important;
+    }
+    .option:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Hero: sección principal con carrusel de imágenes y texto superpuesto */
+    #hero { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+    .carousel, .slides { width: 100%; height: 100%; }
+    .slide { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s ease; }
+    .slide.active { opacity: 1; }
+
+    /* Caja de texto superpuesta en el hero */
+    .hero-text {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      color: #fff; text-align: center; z-index: 5;
+      background: linear-gradient(to bottom, rgba(37,166,241,0) 0%, rgba(37,166,241,0.6) 100%);
+      padding: 20px 30px; border-radius: 8px; backdrop-filter: blur(5px);
+      opacity: 0; /* Oculto inicialmente */
+      animation: fadeInBox 1.5s ease-out forwards 0.5s;
+      transition: all 0.5s ease;
+    }
+    @keyframes fadeInBox { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+    @keyframes fadeOutBox { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -40%); } }
+    .hero-text.fade-out {
+      animation: fadeOutBox 1.5s ease-out forwards !important;
+    }
+    .hero-text h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+    .hero-text p { font-size: 1.2rem; opacity: 0.9; }
+
+    /* Botones de navegación del carrusel */
+    .prev, .next { position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(0,0,0,0.3); color: #fff; border: none;
+      font-size: 2rem; padding: 0 10px; cursor: pointer; z-index: 10; }
+    .prev { left: 20px; } .next { right: 20px; }
+    /* Indicadores de diapositivas (puntos) */
+    .indicators { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; }
+    .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.7);
+      border-radius: 50%; cursor: pointer; }
+    .dot.active { background: #fff; }
+
+    /* Secciones principales */
+    section { display: flex; justify-content: center; align-items: center; flex-direction: column; }
+    #options-container, #map-section { padding: 0; }
+
+    /* Opciones de navegación (cuadros de categorías) */
+    #options {
+      background: transparent !important;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem; padding: 40px 20px; width: 100%;
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    #options.visible { opacity: 1; transform: translateY(0); }
+    .option {
+      background: #fff; border-radius: 10px;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      padding: 40px 20px; min-height: 440px;
+      text-align: center; cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    /* Hover genérico para todas las opciones */
+    .option:hover {
+      transform: translateY(-5px) scale(1.03);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    /* Bordes de color según tipo de opción */
+    .option.memoria-oral:hover        { border-color: green; }
+    .option.patrimonio-material:hover{ border-color: hotpink; }
+    .option.patrimonio-inmaterial:hover { border-color: yellow; }
+    .option.iniciativas-culturales:hover { border-color: blue; }
+
+    .option img {
+      border-radius: 0 !important;
+      filter: grayscale(1);
+      transition: filter 0.4s;
+    }
+    .option:hover img {
+      filter: none;
+    }
+    .option h2 { font-size: 1.4rem; margin-bottom: 0.5rem; color: #2A2E2F; }
+    .option p { font-size: 1rem; opacity: 0.7; line-height: 1.4; }
+
+    /* Iframe del mapa */
+    #web-aledo-frame { width: 100%; height: 95vh; border: none; }
+    .img-box {
+      background: #fff;
+      padding: 12px;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .option img {
+      width: 100%;
+      height: auto;
+      border-radius: 0 !important;
+      margin-bottom: 0;
+      display: block;
+    }
+    .option:hover {
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero: Carrusel de imágenes con texto de bienvenida -->
+  <section id="hero">
+    <div class="carousel">
+      <div class="slides">
+        <img src="assets/images/hero/1.png" class="slide"><!-- Primera imagen -->
+        <img src="assets/images/hero/2.png" class="slide"><!-- Segunda imagen -->
+        <img src="assets/images/hero/3.png" class="slide"><!-- Tercera imagen -->
+      </div>
+      <div class="hero-text">
+        <h1>Bienvenido a Aledo</h1>
+        <p>Explora nuestro patrimonio, iniciativas culturales y la memoria de sus gentes.</p>
+      </div>
+      <!-- Botones para navegar el carrusel -->
+      <button class="prev">&#10094;</button>
+      <button class="next">&#10095;</button>
+      <!-- Indicadores de diapositiva actual -->
+      <div class="indicators">
+        <span class="dot active" data-index="0"></span>
+        <span class="dot" data-index="1"></span>
+        <span class="dot" data-index="2"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Opciones de navegación por categorías -->
+  <section id="options-container">
+    <div id="options">
+      <!-- Cada opción lleva a una sección temática distinta -->
+      <div class="option fade-up memoria-oral" data-link="pages/memoria-oral.html">
+        <div class="img-box"><img src="assets/images/sections/memoriaoral.png" alt="Memoria Oral"></div>
+        <h2>Memoria Oral</h2>
+        <p>Relatos de nuestros mayores ubicados en el mapa.</p>
+      </div>
+      <div class="option fade-up patrimonio-material" data-link="pages/patrimonio-material.html">
+        <div class="img-box"><img src="assets/images/sections/patrimoniomaterial.png" alt="Patrimonio Material"></div>
+        <h2>Patrimonio Material</h2>
+        <p>Descubre monumentos, arquitectura y riqueza histórica.</p>
+      </div>
+      <div class="option fade-up patrimonio-inmaterial" data-link="pages/patrimonio-inmaterial.html">
+        <div class="img-box"><img src="assets/images/sections/patrimonioinmaterial.png" alt="Patrimonio Inmaterial"></div>
+        <h2>Patrimonio Inmaterial</h2>
+        <p>Tradiciones, festividades y saberes que dan vida a Aledo.</p>
+      </div>
+      <div class="option fade-up iniciativas-culturales" data-link="pages/iniciativas-culturales.html">
+        <div class="img-box"><img src="assets/images/sections/iniciativasculturales.png" alt="Iniciativas Culturales"></div>
+        <h2>Iniciativas Culturales</h2>
+        <p>Eventos y proyectos que dinamizan nuestra comunidad.</p>
+      </div>
+      <!-- Logo de AledoAlbumAbierto -->
+      </div>
+      <div style="width:100%;max-width:200px;margin:20px auto 40px auto;text-align:center;cursor:pointer;" onclick="window.location.href='../AledoAlbumAbierto/public/index.html'">
+        <img src="../AledoAlbumAbierto/public/assets/images/logos/logo_simple.png" alt="Aledo Album Abierto" style="height:80px;width:auto;">
+      </div>
+    </div>
+  </section>
+
+  <!-- Mapa interactivo embebido -->
+  <section id="map-section">
+    <iframe id="web-aledo-frame" src="pages/mapaaledo.html"></iframe>
+  </section>
+
+  <!-- Inclusión de la librería Leaflet para mapas (por si se usa en el iframe) -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Script para el funcionamiento del carrusel y animaciones de opciones
+    document.addEventListener('DOMContentLoaded', () => {
+      // Ocultar todas las imágenes inicialmente
+      const slides = document.querySelectorAll('.slide');
+      slides.forEach(slide => slide.classList.remove('active'));
+      
+      // Mostrar la primera imagen después de un pequeño delay
+      setTimeout(() => {
+        slides[0].classList.add('active');
+      }, 100);
+      
+      // Carrusel de imágenes
+      const nextBtn=document.querySelector('.next'), prevBtn=document.querySelector('.prev');
+      const dots=document.querySelectorAll('.dot'); 
+      const heroText=document.querySelector('.hero-text');
+      let idx=0;
+      
+      // Variable para controlar si ya se ha hecho clic una vez
+      let hasBeenClicked = false;
+      
+      // Función para mostrar la diapositiva i
+      const show=(i)=>{
+        // Solo desvanecer el texto si es la primera vez que se hace clic
+        if (!hasBeenClicked) {
+          hasBeenClicked = true;
+          heroText.classList.add('fade-out');
+        }
+        
+        // Cambiar la imagen
+        slides.forEach((s,j)=>s.classList.toggle('active',j===i));
+        dots.forEach((d,j)=>d.classList.toggle('active',j===i));
+        idx=i;
+      };
+      
+      nextBtn.addEventListener('click',()=>show((idx+1)%slides.length));
+      prevBtn.addEventListener('click',()=>show((idx-1+slides.length)%slides.length));
+      dots.forEach(d=>d.addEventListener('click',()=>show(parseInt(d.dataset.index))));
+      // Animación de aparición de las opciones al hacer scroll
+      const opts=document.getElementById('options'), fades=document.querySelectorAll('.fade-up');
+      const obs=new IntersectionObserver(e=>{e.forEach(ent=>{if(ent.isIntersecting){opts.classList.add('visible');fades.forEach(el=>el.classList.add('in-view'));obs.disconnect()}})}, {threshold:0.1});
+      obs.observe(opts);
+      // Redirección al hacer click en una opción
+      document.querySelectorAll('.option').forEach(o=>o.addEventListener('click',()=>location.href=o.dataset.link));
+    });
+  </script>
+
+  <!-- Footer informativo con enlaces y datos de contacto -->
+  <footer style="background:#25A6F1;color:#fff;padding:40px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;">
+    <div><h3 style="margin-bottom:12px;">Banco de Memoria de Aledo</h3><p>Aledo, Murcia</p><p>Tel. 968 123 456</p><p>info@aledomemoria.es</p></div>
+    <div><h3 style="margin-bottom:12px;">Recursos</h3><ul style="list-style:none;padding:0;"><li><a href="pages/patrimonio-material.html" style="color:#fff;text-decoration:none;">Patrimonio Material</a></li><li><a href="pages/patrimonio-inmaterial.html" style="color:#fff;text-decoration:none;">Patrimonio Inmaterial</a></li><li><a href="pages/iniciativas-culturales.html" style="color:#fff;text-decoration:none;">Iniciativas Culturales</a></li><li><a href="pages/memoria-oral.html" style="color:#fff;text-decoration:none;">Memoria Oral</a></li></ul></div>
+    <div><h3 style="margin-bottom:12px;">Información</h3><ul style="list-style:none;padding:0;"><li><a href="#" style="color:#fff;text-decoration:none;">Quiénes Somos</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Colabora</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Política de Privacidad</a></li></ul></div>
+    <div><h3 style="margin-bottom:12px;">Redes Sociales</h3><p><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">📘</a><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">🐦</a><a href="#" style="color:#fff;font-size:1.2rem;text-decoration:none;">📸</a></p></div>
+  </footer>
+</body>
+</html>

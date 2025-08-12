@@ -1,0 +1,447 @@
+<!--
+  Banco de Memoria de Aledo - Mapa interactivo
+  Este archivo muestra un mapa con marcadores categorizados, leyenda de filtros, panel de información y carga dinámica de datos desde un CSV.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Banco de Memoria de Aledo</title>
+  <!-- Hoja de estilos de Leaflet para el mapa -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- PapaParse para leer CSV en el navegador -->
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman';
+      src: url('../assets/fonts/NeueHaasDisplayRoman.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body, #info-panel p, #info-panel a, #info-panel h3 {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important;
+    }
+    /* Estilos generales y del layout principal */
+    html, body { margin:0; padding:0; height:100%; overflow-x:hidden; font-family:sans-serif; }
+    /* Cabecera fija superior */
+    header#masthead { position:fixed; top:0; left:0; right:0; height:80px; background:#25A6F1; display:flex; align-items:center; justify-content:space-between; padding:0 20px; color:#fff; z-index:2000; }
+    .site-title { font-size:18px; text-transform:uppercase; letter-spacing:1px; margin:0; }
+    #about-btn { background:none; border:none; color:#fff; font-size:14px; cursor:pointer; padding:6px 12px; border-radius:4px; }
+    #about-btn:hover { background:rgba(255,255,255,0.1); }
+    /* Área del mapa ocupa toda la pantalla menos la cabecera */
+    #map {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      right: 0;
+      height: calc(100vh - 80px);
+      min-height: 400px;
+      z-index: 1;
+    }
+    /* Leyenda de filtros de categorías */
+    #legend {
+      position: absolute;
+      top: 100px;
+      left: 20px;
+      width: auto;
+      min-width: 120px;
+      display: inline-block;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-radius: 0;
+      padding: 0;
+      z-index: 1500;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: none !important;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    #legend-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 12px 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #legend h2 {
+      margin: 0;
+      font-size: 15px;
+      text-transform: uppercase;
+      color: #111;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+      display: inline-block;
+    }
+    #legend .menu-icon {
+      width: 22px;
+      height: 22px;
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+      fill: #111;
+      transition: fill 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    #legend.open .menu-icon {
+      fill: #25A6F1;
+    }
+    #legend-filters {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+      padding: 0 18px;
+      pointer-events: none;
+    }
+    #legend.open #legend-filters {
+      max-height: 500px;
+      padding-bottom: 12px;
+      pointer-events: auto;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin: 2px 0;
+      padding: 4px 10px;
+      border-radius: 0;
+      transition: all 0.2s ease, opacity 0.4s, transform 0.4s;
+      font-size: 16px;
+      user-select: none;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    #legend.open .legend-item {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .legend-item:hover { background:rgba(37,166,241,0.08); }
+    .legend-item.selected { font-weight:600; color:#25A6F1; }
+    .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
+    .green { background:green; }
+    .pink  { background:hotpink; }
+    .yellow{ background:yellow; }
+    .blue  { background:blue; }
+    /* Tooltip flotante al pasar el ratón por un marcador */
+    #hover-tooltip { position:absolute; background:#fff; color:#000; padding:6px 12px; border:1px solid #ccc; border-radius:4px; font-size:14px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity 0.1s; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:2001; }
+    #hover-tooltip::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-width:6px 6px 0 6px; border-style:solid; border-color:#fff transparent transparent transparent; }
+    /* Panel lateral de información */
+    #info-panel { position:fixed; top:80px; right:0; width:450px; height:calc(100% - 80px); background:#fff; padding:20px; overflow-y:auto; transform:translateX(100%); transition:transform 0.8s cubic-bezier(0.25,0.8,0.25,1); box-shadow:-2px 0 6px rgba(0,0,0,0.2); z-index:2000; }
+    #info-panel.active { transform:translateX(0); }
+    #info-panel .close-btn { position:absolute; top:10px; right:14px; font-size:20px; cursor:pointer; }
+    #info-panel h3 { margin-top:0; font-size:24px; }
+    #info-panel iframe { width:100%; height:200px; border:none; margin-bottom:12px; }
+    #info-panel p { font-size:18px; margin:6px 0; line-height:1.4; }
+    #info-panel a { color:#0066cc; text-decoration:underline; font-size:18px; }
+    /* Animaciones para el contenido del panel lateral */
+    #panel-content.fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    #panel-content.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    #legend, .legend-item, #hover-tooltip, #hover-tooltip::after, #info-panel, .legend-color {
+      border-radius: 0 !important;
+    }
+    #legend {
+      box-shadow: none !important;
+    }
+    #map { position:absolute; top:80px; bottom:0; left:0; right:0; z-index:1; }
+  </style>
+</head>
+<body>
+  <!-- Cabecera fija con título y botón de información -->
+  <header id="masthead">
+    <p class="site-title">Banco de Memoria de Aledo</p>
+    <button id="about-btn">Sobre el proyecto</button>
+  </header>
+  <!-- Contenedor del mapa -->
+  <div id="map" style="position:relative;"></div>
+  <!-- Leyenda de filtros para mostrar/ocultar categorías de marcadores -->
+  <div id="legend">
+    <div id="legend-header" tabindex="0" aria-label="Mostrar filtros" role="button">
+      <h2>Filtros</h2>
+      <span class="menu-icon" id="legend-toggle">
+        <svg viewBox="0 0 24 24"><rect y="4" width="24" height="3" rx="1.5"/><rect y="10.5" width="24" height="3" rx="1.5"/><rect y="17" width="24" height="3" rx="1.5"/></svg>
+      </span>
+    </div>
+    <div id="legend-filters">
+      <div class="legend-item selected" data-type="memoria oral" style="transition-delay:0.08s"> <span class="legend-color green"></span>Memoria oral</div>
+      <div class="legend-item selected" data-type="patrimonio material" style="transition-delay:0.16s"><span class="legend-color pink"></span>Patrimonio material</div>
+      <div class="legend-item selected" data-type="patrimonio inmaterial" style="transition-delay:0.24s"><span class="legend-color yellow"></span>Patrimonio inmaterial</div>
+      <div class="legend-item selected" data-type="cultura" style="transition-delay:0.32s"><span class="legend-color blue"></span>Iniciativas culturales</div>
+    </div>
+  </div>
+  <!-- Tooltip flotante para mostrar nombre al pasar el ratón por un marcador -->
+  <div id="hover-tooltip"></div>
+  <!-- Panel lateral para mostrar información detallada de un elemento -->
+  <div id="info-panel">
+    <span class="close-btn">&times;</span>
+    <div id="panel-content"></div>
+  </div>
+  <!-- Leaflet para mapas -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Inicializa el mapa centrado en Aledo, sin controles de zoom por defecto
+    var map = L.map('map', {
+      zoomControl: false,
+      minZoom: 5, // Permite ver toda España
+      maxBounds: [
+        [27.5, -19.0], // Suroeste (Islas Canarias incluidas)
+        [44.5, 5.0]    // Noreste (Pirineos y algo de Francia)
+      ],
+      scrollWheelZoom: true // Activar el zoom con la rueda por defecto
+    }).setView([37.79456,-1.57295],16);
+    // Añade controles de zoom en la esquina inferior izquierda
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+    // Mapas base
+    var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {maxZoom:19, attribution:'© CartoDB'});
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap contributors'});
+    var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Tiles © Esri'});
+
+    var baseMaps = {
+      "CartoDB Light": cartoLight,
+      "OpenStreetMap": osm,
+      "Esri Satélite": esriSat
+    };
+
+    cartoLight.addTo(map); // El predeterminado
+
+    // Control de capas abajo a la derecha
+    L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(map);
+
+    // Iconos personalizados según categoría - bordes rectos
+    var icons = {
+      'memoria oral':         L.divIcon({className:'legend-color green',  iconSize:[14,14], iconAnchor:[7,7]}),
+      'patrimonio material':  L.divIcon({className:'legend-color pink',   iconSize:[14,14], iconAnchor:[7,7]}),
+      'patrimonio inmaterial':L.divIcon({className:'legend-color yellow', iconSize:[14,14], iconAnchor:[7,7]}),
+      'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]})
+    };
+
+    // Diccionario para guardar los marcadores por tipo
+    var allMarkers = { 'memoria oral':[], 'patrimonio material':[], 'patrimonio inmaterial':[], 'cultura':[] };
+    var tooltip = document.getElementById('hover-tooltip'),
+        panel   = document.getElementById('info-panel'),
+        content = document.getElementById('panel-content');
+    var activeMarker = null; // Para guardar el marcador activo
+
+    // Función para cerrar el panel lateral
+    function closePanel(){ panel.classList.remove('active'); activeMarker = null; }
+    document.querySelector('#info-panel .close-btn').addEventListener('click',closePanel);
+    map.on('click',closePanel);
+
+    // Añade eventos a cada marcador: tooltip y panel de información
+    function addEvents(marker){
+      // Tooltip al pasar el ratón
+      marker.on('mouseover',function(e){
+        var p = map.latLngToContainerPoint(e.latlng), rect = map.getContainer().getBoundingClientRect();
+        tooltip.textContent = marker.data.name;
+        var w=tooltip.offsetWidth, h=tooltip.offsetHeight;
+        tooltip.style.left = rect.left + p.x - w/2 + 'px';
+        tooltip.style.top  = rect.top + p.y - h -12 + 'px';
+        tooltip.style.opacity = 1;
+      });
+      marker.on('mouseout',()=>tooltip.style.opacity=0);
+      // Panel lateral al hacer click
+      marker.on('click',function(e){
+        L.DomEvent.stopPropagation(e);
+        // Si se hace clic en el mismo marcador que ya está abierto, cerrar el panel
+        if(panel.classList.contains('active') && activeMarker === marker) {
+          closePanel();
+          activeMarker = null;
+          return;
+        }
+
+        var d = marker.data, html = '';
+        if(d.tipo==='memoria oral'){
+          html += '<h3>'+d.name+'</h3>';
+          html += '<iframe src="'+d.embed+'" allowfullscreen></iframe>'
+               + '<p><strong>Apodo:</strong> '+d.nickname+'</p>'
+               + '<p><strong>Edad:</strong> '+d.age+'</p>'
+               + '<p><strong>Profesión:</strong> '+d.profession+'</p>'
+               + '<p>'+d.desc+'</p>';
+        } else if(d.tipo==='patrimonio material'){
+          html += '<h3>'+d.name+'</h3>';
+          html += '<img src="'+d.photo+'" style="width:100%;margin-bottom:12px;">'
+               + '<p><strong>Cronología:</strong> '+d.chronology+'</p>'
+               + '<p>'+d.desc+'</p>';
+        } else if(d.tipo==='patrimonio inmaterial'){
+          html += '<h3 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">'+d.name+'</h3>';
+          // Buscar imagen relacionada con el patrimonio inmaterial
+          var imageUrl = '';
+          if(d.name.toLowerCase().includes('mural')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=' + encodeURIComponent(d.name);
+          } else if(d.name.toLowerCase().includes('auto')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Auto+de+Reyes';
+          } else if(d.name.toLowerCase().includes('jirillos')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Jirillos';
+          } else if(d.name.toLowerCase().includes('encuentro')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Encuentro+de+Cuadrillas';
+          } else if(d.name.toLowerCase().includes('semana')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Semana+Santa';
+          } else if(d.name.toLowerCase().includes('trovos')) {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Trovos';
+          } else {
+            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=' + encodeURIComponent(d.name);
+          }
+          html += '<img src="'+imageUrl+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;border-radius:8px;">';
+          html += '<p><strong>Descripción:</strong></p>';
+          html += '<p style="line-height:1.6;margin-bottom:15px;">'+d.desc+'</p>';
+        } else {
+          html += '<h3>'+d.name+'</h3>';
+          if(d.embed) html += '<iframe src="'+d.embed+'" allowfullscreen></iframe>';
+          html += '<p><strong>Organizador:</strong> '+d.organizer+'</p>'
+               + '<p>'+d.desc+'</p>';
+        }
+        // Muestra etiquetas si existen
+        var tags = [];
+        ['etiquetas1','etiquetas2','etiquetas3','etiquetas4'].forEach(function(k){ if(d[k]) tags.push(d[k]); });
+        if(tags.length) html += '<p><strong>Etiquetas:</strong> '+tags.join(', ')+'</p>';
+        if(d.link) html += '<p><a href="'+d.link+'" target="_blank">Más info</a></p>';
+        if(d.date) html += '<p><strong>Fecha:</strong> '+d.date+'</p>';
+
+        // Si el panel ya está abierto, animar fade-out/fade-in
+        if(panel.classList.contains('active')) {
+          content.classList.remove('fade-in');
+          content.classList.add('fade-out');
+          // Espera a que termine el fade-out antes de cambiar el contenido
+          content.addEventListener('transitionend', function handler(ev) {
+            if(ev.propertyName !== 'opacity') return;
+            content.removeEventListener('transitionend', handler);
+            content.innerHTML = html;
+            content.classList.remove('fade-out');
+            // Forzar reflow para que el fade-in funcione siempre
+            void content.offsetWidth;
+            content.classList.add('fade-in');
+          });
+        } else {
+          content.innerHTML = html;
+          content.classList.remove('fade-out','fade-in');
+          panel.classList.add('active');
+        }
+        activeMarker = marker; // Guardar el marcador activo
+      });
+    }
+
+    // Carga el CSV de datos y crea los marcadores
+    Papa.parse('../data/datos_aledo.csv',{download:true,header:true,complete:function(res){
+      // Mostrar todos los tipos únicos encontrados para depuración
+      var tiposUnicos = new Set();
+      var iconKeys = Object.keys(icons);
+      res.data.forEach(function(d, idx){
+        var tipoRaw = d.tipo;
+        var tipo = (tipoRaw || '').toLowerCase().replace(/["\s\uFEFF\xA0]+/g, ' ').trim();
+        var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
+        // DEPURACIÓN: Mostrar tipo crudo y limpio, y si coincide con las claves de iconos
+        console.log('Fila', idx, '| tipo raw:', JSON.stringify(tipoRaw), '| tipo limpio:', JSON.stringify(tipo), '| ¿Coincide con iconKeys?:', iconKeys.includes(tipo));
+        if(!iconKeys.includes(tipo)) {
+          console.warn('ATENCIÓN: Marcador omitido por tipo desconocido:', JSON.stringify(tipo), '| tipo raw:', JSON.stringify(tipoRaw), '| Claves válidas:', iconKeys);
+        }
+        tiposUnicos.add(tipo);
+        if(isNaN(lat)||isNaN(lng)) return;
+        if(!icons[tipo]) {
+          // Ya avisado arriba
+          return;
+        }
+        var m = L.marker([lat,lng],{icon:icons[tipo]}).addTo(map);
+        m.data=d; allMarkers[tipo].push(m); addEvents(m);
+      });
+      console.log('Tipos únicos encontrados en el CSV:', Array.from(tiposUnicos));
+      
+      // Debug: verificar que los marcadores se cargan correctamente
+      console.log('Marcadores cargados:', allMarkers);
+      
+      // Añade eventos a los filtros de la leyenda
+      document.querySelectorAll('.legend-item').forEach(function(el){
+        el.addEventListener('click',function(){ el.classList.toggle('selected'); applyFilters(); });
+        // Doble clic para aislar/restaurar
+        el.addEventListener('dblclick', function(e) {
+          e.preventDefault();
+          const all = Array.from(document.querySelectorAll('.legend-item'));
+          const selected = all.filter(item => item.classList.contains('selected'));
+          if (selected.length === 1 && selected[0] === el) {
+            // Si ya está aislado, restaurar todos
+            all.forEach(item => item.classList.add('selected'));
+          } else {
+            // Ocultar todos menos el doble clicado
+            all.forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+          }
+          applyFilters();
+        });
+      });
+      applyFilters();
+    }});
+
+    // Aplica los filtros de la leyenda mostrando/ocultando marcadores
+    function applyFilters(){
+      Object.keys(allMarkers).forEach(function(key){
+        var show = document.querySelector('[data-type="'+key+'"]').classList.contains('selected');
+        allMarkers[key].forEach(function(m){ 
+          if(show) {
+            if(!map.hasLayer(m)) {
+              m.addTo(map);
+            }
+          } else {
+            if(map.hasLayer(m)) {
+              map.removeLayer(m);
+            }
+          }
+        });
+      });
+    }
+
+    // Botón de información sobre el proyecto
+    document.getElementById('about-btn').addEventListener('click',function(e){
+      e.stopPropagation();
+      var html = '<h3>Sobre el proyecto</h3>'
+               + '<p>"Banco de Memoria de Aledo" preserva relatos orales de nuestros mayores y los geolocaliza para fomentar memoria colectiva.</p>'
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:6px;"></span><strong>Memoria oral</strong></p>'
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:hotpink;margin-right:6px;"></span><strong>Patrimonio material</strong></p>'
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:6px;"></span><strong>Patrimonio inmaterial</strong></p>'
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:blue;margin-right:6px;"></span><strong>Iniciativas culturales</strong></p>';
+      content.innerHTML = html; panel.classList.add('active');
+    });
+
+    // Desplegable de filtros
+    const legend = document.getElementById('legend');
+    const legendHeader = document.getElementById('legend-header');
+    legendHeader.addEventListener('click', () => {
+      legend.classList.toggle('open');
+      if (legend.classList.contains('open')) {
+        // Limpiar estilos inline para que la animación funcione siempre
+        document.querySelectorAll('.legend-item').forEach(item => {
+          item.style.opacity = '';
+          item.style.transform = '';
+        });
+      }
+    });
+    legendHeader.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        legend.classList.toggle('open');
+        if (legend.classList.contains('open')) {
+          document.querySelectorAll('.legend-item').forEach(item => {
+            item.style.opacity = '';
+            item.style.transform = '';
+          });
+        }
+        e.preventDefault();
+      }
+    });
+    legend.classList.remove('open');
+    legend.addEventListener('transitionend', (e) => {
+      if (!legend.classList.contains('open')) {
+        document.querySelectorAll('.legend-item').forEach(item => {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(20px)';
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+
