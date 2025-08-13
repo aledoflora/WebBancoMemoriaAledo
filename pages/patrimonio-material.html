@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Patrimonio Material - Banco de Memoria de Aledo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='hotpink'/></svg>">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,16 +43,112 @@
     }
     
     /* Columna derecha - Galería */
-    .right-column { flex: 1; padding: 30px; background: #f8f9fa; }
+    .right-column { flex: 1; padding: 30px; background: white; }
     .gallery h3 { color: #25A6F1; margin-bottom: 20px; font-size: 1.8rem; }
     .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-    .gallery-item { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
-    .gallery-item:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-    .gallery-item.highlighted { border: 3px solid #25A6F1; transform: translateY(-5px); box-shadow: 0 8px 20px rgba(37,166,241,0.3); }
+    .gallery-item { background: white; border-radius: 0px; overflow: hidden; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+    .gallery-item.highlighted { border: 3px solid hotpink; }
     .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
     .gallery-item .info { padding: 15px; }
-    .gallery-item h4 { color: #25A6F1; margin-bottom: 8px; }
-    .gallery-item p { color: #666; font-size: 0.9rem; }
+    .gallery-item h4 { color: #25A6F1; margin-bottom: 0px; }
+    .gallery-item p { display: none; }
+    
+    /* Panel modal de información */
+    #info-panel { 
+      position:fixed; 
+      top:0; 
+      left:0; 
+      width:100%; 
+      height:100%; 
+      background:rgba(0,0,0,0.5); 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      z-index:2000; 
+      opacity:0; 
+      visibility:hidden; 
+      transition:opacity 0.4s ease, visibility 0.4s ease; 
+    }
+    #info-panel.active { 
+      opacity:1; 
+      visibility:visible; 
+    }
+    #info-panel .modal-content { 
+      background:#fff; 
+      width:90%; 
+      max-width:600px; 
+      max-height:80vh; 
+      overflow-y:auto; 
+      position:relative; 
+      padding:30px; 
+      border-radius: 0px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      transform: scale(0.7) translateY(30px);
+      opacity: 0;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    #info-panel .modal-content::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
+    #info-panel.active .modal-content {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+    #info-panel .close-btn { 
+      position:absolute; 
+      top:15px; 
+      right:20px; 
+      font-size:24px; 
+      cursor:pointer; 
+      color:#666; 
+      transition: color 0.2s ease;
+    }
+    #info-panel .close-btn:hover { 
+      color:#000; 
+    }
+    #info-panel h3 { 
+      margin-top:0; 
+      font-size:24px; 
+      margin-bottom:20px; 
+      color: #000;
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important;
+    }
+    #info-panel iframe { 
+      width:100%; 
+      height:200px; 
+      border:none; 
+      margin-bottom:15px; 
+    }
+    #info-panel img { 
+      width:100%; 
+      height:250px; 
+      object-fit:cover; 
+      margin-bottom:15px; 
+    }
+    #info-panel p { 
+      font-size:16px; 
+      margin:8px 0; 
+      line-height:1.6; 
+    }
+    #info-panel a { 
+      color:#0066cc; 
+      text-decoration:underline; 
+      font-size:16px; 
+    }
+    #panel-content { }
+    /* Animaciones para el contenido del modal */
+    #panel-content.fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    #panel-content.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.4s, transform 0.4s;
+    }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -98,53 +195,7 @@
       <div class="gallery">
         <h3>Galería de Patrimonio Material</h3>
         <div class="gallery-grid">
-          <div class="gallery-item patrimonio-material" data-name="La Picota">
-            <img src="https://regiondemurciafilm.com/localizacion/picota-de-aledo/" alt="La Picota">
-            <div class="info">
-              <h4>La Picota</h4>
-              <p>Columna de justicia erigida en 1592, símbolo del poder señorial y la administración de justicia en la época moderna.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item patrimonio-material" data-name="Muralla de Aledo">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/Archivo:Muralla_de_Aledo.jpg" alt="Muralla de Aledo">
-            <div class="info">
-              <h4>Muralla de Aledo</h4>
-              <p>Vestigio del recinto amurallado almohade y cristiano del siglo XIII, testimonio de la importancia estratégica de la localidad.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item patrimonio-material" data-name="Torre del Homenaje">
-            <img src="https://es.wikipedia.org/wiki/Castillo_de_Aledo#/media/Archivo:Castillo_de_Aledo.jpg" alt="Torre del Homenaje">
-            <div class="info">
-              <h4>Torre del Homenaje</h4>
-              <p>Fortaleza andalusí del siglo X, elemento central del sistema defensivo que protegía la frontera entre los reinos cristiano y musulmán.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item patrimonio-material" data-name="Iglesia de Santa María la Real">
-            <img src="http://www.regmurcia.com/servlet/s.Sl?sit=a" alt="Iglesia de Santa María la Real">
-            <div class="info">
-              <h4>Iglesia de Santa María la Real</h4>
-              <p>Erigida entre 1761 y 1804, representa el barroco tardío y constituye el centro espiritual de la comunidad aledana.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item patrimonio-material" data-name="Fuente de allí abajo">
-            <img src="https://via.placeholder.com/300x200/25A6F1/white?text=Fuente+de+allí+abajo" alt="Fuente de allí abajo">
-            <div class="info">
-              <h4>Fuente de allí abajo</h4>
-              <p>Elemento arquitectónico tradicional que forma parte del sistema de abastecimiento de agua, fundamental para la vida cotidiana.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item patrimonio-material" data-name="Torre del agua">
-            <img src="https://via.placeholder.com/300x200/25A6F1/white?text=Torre+del+agua" alt="Torre del agua">
-            <div class="info">
-              <h4>Torre del agua</h4>
-              <p>Infraestructura defensiva relacionada con el abastecimiento de agua, muestra de la ingeniería hidráulica tradicional.</p>
-            </div>
-          </div>
+          <!-- La galería se genera dinámicamente desde el CSV -->
         </div>
       </div>
     </div>
@@ -180,15 +231,26 @@
       'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]})
     };
     
-    // Solo mostrar marcadores de patrimonio material
+    // Variables globales
     var materialMarkers = [];
+    var activeMarker = null;
+    var panel, panelContent;
+    
+    // Esperar a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      panel = document.getElementById('info-panel');
+      panelContent = document.getElementById('panel-content');
+    });
     
     // Cargar datos y crear marcadores
-          Papa.parse('../data/datos_aledo.csv', {
+    Papa.parse('../data/datos_aledo.csv', {
       download: true,
       header: true,
       delimiter: ';',
       complete: function(res) {
+        var galleryGrid = document.querySelector('.gallery-grid');
+        galleryGrid.innerHTML = ''; // Limpiar galería estática
+        
         res.data.forEach(function(d) {
           var tipo = (d.tipo || '').toLowerCase().trim();
           if(tipo === 'patrimonio material') {
@@ -198,7 +260,7 @@
               marker.data = d;
               materialMarkers.push(marker);
               
-              // Evento hover para resaltar en galería (sin scroll)
+              // Evento hover para resaltar en galería
               marker.on('mouseover', function(e) {
                 L.DomEvent.stopPropagation(e);
                 highlightGalleryItem(d.name);
@@ -208,12 +270,33 @@
                 removeHighlight();
               });
             }
+            
+            // Crear elemento de galería dinámicamente
+            if(d.photo && d.photo.trim() !== '') {
+              var galleryItem = document.createElement('div');
+              galleryItem.className = 'gallery-item patrimonio-material';
+              galleryItem.setAttribute('data-name', d.name);
+              
+              galleryItem.innerHTML = `
+                <img src="${d.photo}" alt="${d.name}" onerror="this.style.display='none'">
+                <div class="info">
+                  <h4>${d.name}</h4>
+                </div>
+              `;
+              
+              // Añadir evento click para mostrar modal
+              galleryItem.addEventListener('click', function() {
+                showItemInfo(d);
+              });
+              
+              galleryGrid.appendChild(galleryItem);
+            }
           }
         });
       }
     });
     
-    // Función para resaltar elemento en galería (sin scroll automático)
+    // Función para resaltar elemento en galería
     function highlightGalleryItem(name) {
       removeHighlight();
       var galleryItem = document.querySelector('.gallery-item[data-name="' + name + '"]');
@@ -229,15 +312,52 @@
       });
     }
     
-    // Eventos para galería
-    document.querySelectorAll('.gallery-item').forEach(function(item) {
-      item.addEventListener('mouseenter', function() {
-        // Eliminado: resaltar marcador visualmente
-      });
-      item.addEventListener('mouseleave', function() {
-        // Eliminado: quitar resaltado visual
-      });
-    });
+    // Función para mostrar información del elemento en el modal
+    function showItemInfo(d) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      
+      if (!panel || !panelContent) {
+        return;
+      }
+      
+      panelContent.innerHTML = '';
+      
+      var html = '<h3>' + d.name + '</h3>';
+      
+      // Mostrar video si existe, si no imagen
+      if(d.embed) {
+        html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+        html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+        html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+        html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+        html += '</div>';
+      } else if(d.photo && d.photo.trim() !== '') {
+        html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
+      }
+      
+      if(d.desc) html += '<p><strong>Descripción:</strong> ' + d.desc + '</p>';
+      if(d.chronology) html += '<p><strong>Cronología:</strong> ' + d.chronology + '</p>';
+      if(d.link) html += '<p><strong>Enlace:</strong> <a href="'+d.link+'" target="_blank">' + d.link + '</a></p>';
+      if(d.organizer) html += '<p><strong>Organizador:</strong> ' + d.organizer + '</p>';
+      
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+      activeMarker = d;
+    }
+    
+    // Función para cerrar el panel
+    function closePanel() {
+      if (!panel) {
+        panel = document.getElementById('info-panel');
+      }
+      if (panel) {
+        panel.classList.remove('active');
+        activeMarker = null;
+      }
+    }
   </script>
   
   <style>
@@ -271,5 +391,13 @@
     .gallery-item.patrimonio-inmaterial:hover, .gallery-item.patrimonio-inmaterial.highlighted { border-color: #FFD600 !important; }
     .gallery-item.iniciativas-culturales:hover, .gallery-item.iniciativas-culturales.highlighted { border-color: #25A6F1 !important; }
   </style>
+  
+  <!-- Panel modal de información -->
+  <div id="info-panel" onclick="closePanel()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="close-btn" onclick="closePanel()">×</div>
+      <div id="panel-content"></div>
+    </div>
+  </div>
 </body>
 </html> 
