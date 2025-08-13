@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Iniciativas Culturales - Banco de Memoria de Aledo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='blue'/></svg>">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,16 +43,39 @@
     }
     
     /* Columna derecha - Galería */
-    .right-column { flex: 1; padding: 30px; background: #f8f9fa; }
+    .right-column { flex: 1; padding: 30px; background: white; }
     .gallery h3 { color: #25A6F1; margin-bottom: 20px; font-size: 1.8rem; }
     .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-    .gallery-item { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
-    .gallery-item:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-    .gallery-item.highlighted { border: 3px solid #25A6F1; transform: translateY(-5px); box-shadow: 0 8px 20px rgba(37,166,241,0.3); }
+    .gallery-item { background: white; border-radius: 0px; overflow: hidden; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+    .gallery-item.highlighted { border: 3px solid blue; }
     .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
     .gallery-item .info { padding: 15px; }
-    .gallery-item h4 { color: #25A6F1; margin-bottom: 8px; }
-    .gallery-item p { color: #666; font-size: 0.9rem; }
+    .gallery-item h4 { color: #25A6F1; margin-bottom: 0px; }
+    .gallery-item p { display: none; }
+    
+    /* Panel modal de información */
+    #info-panel { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2000; opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease; }
+    #info-panel.active { opacity:1; visibility:visible; }
+    #info-panel .modal-content { background:#fff; width:90%; max-width:600px; max-height:80vh; overflow-y:auto; position:relative; padding:30px; }
+    #info-panel .close-btn { position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer; color:#666; }
+    #info-panel .close-btn:hover { color:#000; }
+    #info-panel h3 { margin-top:0; font-size:24px; margin-bottom:20px; }
+    #info-panel iframe { width:100%; height:200px; border:none; margin-bottom:15px; }
+    #info-panel img { width:100%; height:250px; object-fit:cover; margin-bottom:15px; }
+    #info-panel p { font-size:16px; margin:8px 0; line-height:1.6; }
+    #info-panel a { color:#0066cc; text-decoration:underline; font-size:16px; }
+    #panel-content { }
+    /* Animaciones para el contenido del modal */
+    #panel-content.fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    #panel-content.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.4s, transform 0.4s;
+    }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -97,32 +121,18 @@
     <div class="right-column">
       <div class="gallery">
         <h3>Galería de Iniciativas Culturales</h3>
-        <div class="gallery-grid">
-          <div class="gallery-item iniciativas-culturales" data-name="SonARTE Aledo">
-            <img src="https://via.placeholder.com/300x200/2196F3/white?text=SonARTE+Aledo" alt="SonARTE Aledo">
-            <div class="info">
-              <h4>SonARTE Aledo</h4>
-              <p>Festival anual de jóvenes talentos que promueve la música y las artes escénicas, organizado por el Ayuntamiento y la Asociación de Jóvenes.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item iniciativas-culturales" data-name="Noche en Vela">
-            <img src="https://via.placeholder.com/300x200/2196F3/white?text=Noche+en+Vela" alt="Noche en Vela">
-            <div class="info">
-              <h4>Noche en Vela</h4>
-              <p>Evento anual en agosto que combina tradición y modernidad, organizado por la Asociación Sociocultural La Noche en Vela de Aledo.</p>
-            </div>
-          </div>
-          
-          <div class="gallery-item iniciativas-culturales" data-name="Festival de Charangas">
-            <img src="https://via.placeholder.com/300x200/2196F3/white?text=Festival+de+Charangas" alt="Festival de Charangas">
-            <div class="info">
-              <h4>Festival de Charangas</h4>
-              <p>Celebración musical que reúne a grupos tradicionales y modernos, preservando y renovando el patrimonio musical de la región.</p>
-            </div>
-          </div>
+        <div class="gallery-grid" id="gallery-container">
+          <!-- La galería se generará dinámicamente desde el CSV -->
         </div>
       </div>
+    </div>
+  </div>
+  
+  <!-- Panel modal de información -->
+  <div id="info-panel" onclick="closePanel()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="close-btn" onclick="closePanel()">×</div>
+      <div id="panel-content"></div>
     </div>
   </div>
 
@@ -160,11 +170,13 @@
     var culturalMarkers = [];
     
     // Cargar datos y crear marcadores
-          Papa.parse('../data/datos_aledo.csv', {
+    Papa.parse('../data/datos_aledo.csv', {
       download: true,
       header: true,
       delimiter: ';',
       complete: function(res) {
+        var galleryContainer = document.getElementById('gallery-container');
+        
         res.data.forEach(function(d) {
           var tipo = (d.tipo || '').toLowerCase().trim();
           if(tipo === 'cultura') {
@@ -184,6 +196,28 @@
                 removeHighlight();
               });
             }
+            
+            // Crear elemento de galería
+            var galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item iniciativas-culturales';
+            galleryItem.setAttribute('data-name', d.name);
+            
+            var imgSrc = d.photo && d.photo.trim() !== '' ? d.photo : 'https://via.placeholder.com/300x200/2196F3/white?text=' + encodeURIComponent(d.name);
+            
+            galleryItem.innerHTML = `
+              <img src="${imgSrc}" alt="${d.name}" onerror="this.src='https://via.placeholder.com/300x200/2196F3/white?text=${encodeURIComponent(d.name)}'">
+              <div class="info">
+                <h4>${d.name}</h4>
+                <p style="display:none;"></p>
+              </div>
+            `;
+            
+            // Añadir evento de clic para abrir el panel
+            galleryItem.addEventListener('click', function() {
+              showItemInfo(d);
+            });
+            
+            galleryContainer.appendChild(galleryItem);
           }
         });
       }
@@ -205,15 +239,57 @@
       });
     }
     
-    // Eventos para galería
-    document.querySelectorAll('.gallery-item').forEach(function(item) {
-      item.addEventListener('mouseenter', function() {
-        // Eliminado: resaltar marcador visualmente
-      });
-      item.addEventListener('mouseleave', function() {
-        // Eliminado: quitar resaltado visual
-      });
-    });
+    // Variables globales para el panel
+    var panel = document.getElementById('info-panel');
+    var content = document.getElementById('panel-content');
+    var activeMarker = null;
+    
+    // Función para mostrar información del elemento
+    function showItemInfo(d) {
+      var html = '';
+      
+      if(d.tipo === 'cultura'){
+        html += '<h3>'+d.name+'</h3>';
+        if(d.embed) {
+          html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+          html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+          html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+          html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+          html += '</div>';
+        }
+        html += '<p><strong>Organizador:</strong> '+d.organizer+'</p>'
+             + '<p>'+d.desc+'</p>';
+      }
+      
+      if(d.link) html += '<p><a href="'+d.link+'" target="_blank">Más info</a></p>';
+      if(d.date) html += '<p><strong>Fecha:</strong> '+d.date+'</p>';
+      
+      // Si el panel ya está abierto, animar fade-out/fade-in
+      if(panel.classList.contains('active')) {
+        content.classList.remove('fade-in');
+        content.classList.add('fade-out');
+        // Espera a que termine el fade-out antes de cambiar el contenido
+        content.addEventListener('transitionend', function handler(ev) {
+          if(ev.propertyName !== 'opacity') return;
+          content.removeEventListener('transitionend', handler);
+          content.innerHTML = html;
+          content.classList.remove('fade-out');
+          // Forzar reflow para que el fade-in funcione siempre
+          void content.offsetWidth;
+          content.classList.add('fade-in');
+        });
+      } else {
+        content.innerHTML = html;
+        content.classList.remove('fade-out','fade-in');
+        panel.classList.add('active');
+      }
+    }
+    
+    // Función para cerrar el panel
+    function closePanel() {
+      panel.classList.remove('active');
+      activeMarker = null;
+    }
   </script>
   
   <style>
@@ -232,20 +308,6 @@
       transition: box-shadow 0.2s, transform 0.2s;
     }
   </style>
-  <style>
-    .gallery {
-      background: #fff !important;
-    }
-    .gallery-item {
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      border: 3px solid transparent;
-      transition: border-color 0.2s;
-    }
-    .gallery-item.memoria-oral:hover, .gallery-item.memoria-oral.highlighted { border-color: green !important; }
-    .gallery-item.patrimonio-material:hover, .gallery-item.patrimonio-material.highlighted { border-color: hotpink !important; }
-    .gallery-item.patrimonio-inmaterial:hover, .gallery-item.patrimonio-inmaterial.highlighted { border-color: #FFD600 !important; }
-    .gallery-item.iniciativas-culturales:hover, .gallery-item.iniciativas-culturales.highlighted { border-color: #25A6F1 !important; }
-  </style>
+
 </body>
 </html> 

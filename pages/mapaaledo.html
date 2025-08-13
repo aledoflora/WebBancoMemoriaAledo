@@ -121,18 +121,20 @@
     .green { background:green; }
     .pink  { background:hotpink; }
     .yellow{ background:yellow; }
+    .orange{ background:orange; }
     .blue  { background:blue; }
     /* Tooltip flotante al pasar el ratón por un marcador */
     #hover-tooltip { position:absolute; background:#fff; color:#000; padding:6px 12px; border:1px solid #ccc; border-radius:4px; font-size:14px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity 0.1s; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:2001; }
     #hover-tooltip::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-width:6px 6px 0 6px; border-style:solid; border-color:#fff transparent transparent transparent; }
     /* Panel lateral de información */
-    #info-panel { position:fixed; top:80px; right:0; width:450px; height:calc(100% - 80px); background:#fff; padding:20px; overflow-y:auto; transform:translateX(100%); transition:transform 0.8s cubic-bezier(0.25,0.8,0.25,1); box-shadow:-2px 0 6px rgba(0,0,0,0.2); z-index:2000; }
+    #info-panel { position:fixed; top:80px; right:0; width:450px; height:calc(100% - 80px); background:#fff; padding:20px; padding-bottom:40px; overflow-y:auto; transform:translateX(100%); transition:transform 0.8s cubic-bezier(0.25,0.8,0.25,1); box-shadow:-2px 0 6px rgba(0,0,0,0.2); z-index:2000; }
     #info-panel.active { transform:translateX(0); }
     #info-panel .close-btn { position:absolute; top:10px; right:14px; font-size:20px; cursor:pointer; }
     #info-panel h3 { margin-top:0; font-size:24px; }
     #info-panel iframe { width:100%; height:200px; border:none; margin-bottom:12px; }
     #info-panel p { font-size:18px; margin:6px 0; line-height:1.4; }
     #info-panel a { color:#0066cc; text-decoration:underline; font-size:18px; }
+    #panel-content { margin-bottom:60px; }
     /* Animaciones para el contenido del panel lateral */
     #panel-content.fade-out {
       opacity: 0;
@@ -259,48 +261,60 @@
         var d = marker.data, html = '';
         if(d.tipo==='memoria oral'){
           html += '<h3>'+d.name+'</h3>';
-          html += '<iframe src="'+d.embed+'" allowfullscreen></iframe>'
-               + '<p><strong>Apodo:</strong> '+d.nickname+'</p>'
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          }
+          html += '<p><strong>Apodo:</strong> '+d.nickname+'</p>'
                + '<p><strong>Edad:</strong> '+d.age+'</p>'
                + '<p><strong>Profesión:</strong> '+d.profession+'</p>'
                + '<p>'+d.desc+'</p>';
         } else if(d.tipo==='patrimonio material'){
           html += '<h3>'+d.name+'</h3>';
-          html += '<img src="'+d.photo+'" style="width:100%;margin-bottom:12px;">'
-               + '<p><strong>Cronología:</strong> '+d.chronology+'</p>'
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          } else if(d.photo && d.photo.trim() !== '') {
+            html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
+          }
+          html += '<p><strong>Cronología:</strong> '+d.chronology+'</p>'
                + '<p>'+d.desc+'</p>';
         } else if(d.tipo==='patrimonio inmaterial'){
           html += '<h3 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">'+d.name+'</h3>';
-          // Buscar imagen relacionada con el patrimonio inmaterial
-          var imageUrl = '';
-          if(d.name.toLowerCase().includes('mural')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=' + encodeURIComponent(d.name);
-          } else if(d.name.toLowerCase().includes('auto')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Auto+de+Reyes';
-          } else if(d.name.toLowerCase().includes('jirillos')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Jirillos';
-          } else if(d.name.toLowerCase().includes('encuentro')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Encuentro+de+Cuadrillas';
-          } else if(d.name.toLowerCase().includes('semana')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Semana+Santa';
-          } else if(d.name.toLowerCase().includes('trovos')) {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=Trovos';
-          } else {
-            imageUrl = 'https://via.placeholder.com/400x250/FFC107/white?text=' + encodeURIComponent(d.name);
+          // NUEVA NORMA: Video si existe, si no imagen
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          } else if(d.photo && d.photo.trim() !== '') {
+            html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
           }
-          html += '<img src="'+imageUrl+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;border-radius:8px;">';
           html += '<p><strong>Descripción:</strong></p>';
           html += '<p style="line-height:1.6;margin-bottom:15px;">'+d.desc+'</p>';
         } else {
           html += '<h3>'+d.name+'</h3>';
-          if(d.embed) html += '<iframe src="'+d.embed+'" allowfullscreen></iframe>';
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          }
           html += '<p><strong>Organizador:</strong> '+d.organizer+'</p>'
                + '<p>'+d.desc+'</p>';
         }
         // Muestra etiquetas si existen
-        var tags = [];
-        ['etiquetas1','etiquetas2','etiquetas3','etiquetas4'].forEach(function(k){ if(d[k]) tags.push(d[k]); });
-        if(tags.length) html += '<p><strong>Etiquetas:</strong> '+tags.join(', ')+'</p>';
+        // var tags = [];
+        // ['etiquetas1','etiquetas2','etiquetas3','etiquetas4'].forEach(function(k){ if(d[k]) tags.push(d[k]); });
+        // if(tags.length) html += '<p><strong>Etiquetas:</strong> '+tags.join(', ')+'</p>';
         if(d.link) html += '<p><a href="'+d.link+'" target="_blank">Más info</a></p>';
         if(d.date) html += '<p><strong>Fecha:</strong> '+d.date+'</p>';
 
@@ -403,6 +417,7 @@
                + '<p><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:6px;"></span><strong>Memoria oral</strong></p>'
                + '<p><span style="display:inline-block;width:12px;height:12px;background:hotpink;margin-right:6px;"></span><strong>Patrimonio material</strong></p>'
                + '<p><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:6px;"></span><strong>Patrimonio inmaterial</strong></p>'
+
                + '<p><span style="display:inline-block;width:12px;height:12px;background:blue;margin-right:6px;"></span><strong>Iniciativas culturales</strong></p>';
       content.innerHTML = html; panel.classList.add('active');
     });
