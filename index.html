@@ -84,10 +84,18 @@
     #options {
       background: transparent !important;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 2rem; padding: 40px 20px; width: 100%;
       opacity: 0; transform: translateY(30px);
       transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    }
+    
+    /* Responsive para el grid de categorías */
+    @media (max-width: 1200px) {
+      #options { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      #options { grid-template-columns: 1fr; }
     }
     #options.visible { opacity: 1; transform: translateY(0); }
     .option {
@@ -108,6 +116,10 @@
     .option.patrimonio-material:hover{ border-color: hotpink; }
     .option.patrimonio-inmaterial:hover { border-color: yellow; }
     .option.iniciativas-culturales:hover { border-color: blue; }
+    .option.patrimonio-natural:hover { border-color: #90EE90; }
+    .option.recetario:hover { border-color: orange; }
+    .option.aledo-album-abierto:hover { border-color: red; }
+    .option.huerta-andalusi:hover { border-color: cadetblue; }
 
     .option img {
       border-radius: 0 !important;
@@ -122,6 +134,21 @@
 
     /* Iframe del mapa */
     #web-aledo-frame { width: 100%; height: 95vh; border: none; }
+    /* Contenedor con márgenes laterales para permitir scroll fuera del iframe */
+    .map-frame-wrapper { padding: 0 32px; width: 100%; position: relative; }
+    @media (max-width: 1024px) { .map-frame-wrapper { padding: 0 20px; } }
+    @media (max-width: 600px) { .map-frame-wrapper { padding: 0 12px; } }
+    /* Capa de bloqueo inicial para requerir clic antes de interactuar con el mapa */
+    .map-interaction-guard {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.25); color: #fff; z-index: 2; cursor: pointer;
+      font-size: 1.1rem; text-align: center; padding: 16px; border-radius: 6px;
+    }
+    .map-interaction-guard .bubble {
+      background: rgba(0,0,0,0.55); padding: 12px 16px; border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .map-interaction-guard.hidden { display: none; }
     .img-box {
       background: #fff;
       padding: 12px;
@@ -172,12 +199,7 @@
   <!-- Opciones de navegación por categorías -->
   <section id="options-container">
     <div id="options">
-      <!-- Cada opción lleva a una sección temática distinta -->
-      <div class="option fade-up memoria-oral" data-link="pages/memoria-oral.html">
-        <div class="img-box"><img src="assets/images/sections/memoriaoral.png" alt="Memoria Oral"></div>
-        <h2>Memoria Oral</h2>
-        <p>Relatos de nuestros mayores ubicados en el mapa.</p>
-      </div>
+      <!-- Fila superior: Material, Inmaterial, Natural, Huerta -->
       <div class="option fade-up patrimonio-material" data-link="pages/patrimonio-material.html">
         <div class="img-box"><img src="assets/images/sections/patrimoniomaterial.png" alt="Patrimonio Material"></div>
         <h2>Patrimonio Material</h2>
@@ -188,22 +210,49 @@
         <h2>Patrimonio Inmaterial</h2>
         <p>Tradiciones, festividades y saberes que dan vida a Aledo.</p>
       </div>
+      <div class="option fade-up patrimonio-natural" data-link="pages/patrimonio-natural.html">
+        <div class="img-box"><img src="assets/images/sections/patrimonioinmaterial.png" alt="Patrimonio Natural"></div>
+        <h2>Patrimonio Natural</h2>
+        <p>Paisajes, flora y fauna que conforman el entorno de Aledo.</p>
+      </div>
+      <div class="option fade-up huerta-andalusi" data-link="pages/huerta-andalusi.html">
+        <div class="img-box"><img src="assets/images/sections/patrimonioinmaterial.png" alt="Huerta Andalusí"></div>
+        <h2>Huerta Andalusí</h2>
+        <p>Sistemas de agua, riego y paisajes de cultivo tradicional.</p>
+      </div>
+
+      <!-- Fila inferior: resto, con Aledo Álbum Abierto abajo derecha -->
+      <div class="option fade-up memoria-oral" data-link="pages/memoria-oral.html">
+        <div class="img-box"><img src="assets/images/sections/memoriaoral.png" alt="Memoria Oral"></div>
+        <h2>Memoria Oral</h2>
+        <p>Relatos de nuestros mayores ubicados en el mapa.</p>
+      </div>
       <div class="option fade-up iniciativas-culturales" data-link="pages/iniciativas-culturales.html">
         <div class="img-box"><img src="assets/images/sections/iniciativasculturales.png" alt="Iniciativas Culturales"></div>
         <h2>Iniciativas Culturales</h2>
         <p>Eventos y proyectos que dinamizan nuestra comunidad.</p>
       </div>
-      <!-- Logo de AledoAlbumAbierto -->
+      <div class="option fade-up recetario" data-link="pages/recetario.html">
+        <div class="img-box"><img src="assets/images/sections/iniciativasculturales.png" alt="Recetario de la Agüela"></div>
+        <h2>Recetario de la Agüela</h2>
+        <p>Platos y dulces tradicionales que guardan la memoria de Aledo.</p>
       </div>
-      <div style="width:100%;max-width:200px;margin:20px auto 40px auto;text-align:center;cursor:pointer;" onclick="window.location.href='../AledoAlbumAbierto/public/index.html'">
-        <img src="../AledoAlbumAbierto/public/assets/images/logos/logo_simple.png" alt="Aledo Album Abierto" style="height:80px;width:auto;">
+      <div class="option fade-up aledo-album-abierto" data-link="https://aledoalbumabierto.onrender.com/index.html">
+        <div class="img-box"><img src="assets/images/sections/iniciativasculturales.png" alt="Aledo Album Abierto"></div>
+        <h2>Aledo Album Abierto</h2>
+        <p>Explora el álbum fotográfico abierto de Aledo.</p>
       </div>
     </div>
   </section>
 
   <!-- Mapa interactivo embebido -->
   <section id="map-section">
-    <iframe id="web-aledo-frame" src="pages/mapaaledo.html"></iframe>
+    <div class="map-frame-wrapper">
+      <div class="map-interaction-guard" id="map-guard" role="button" tabindex="0" aria-label="Activar interacción del mapa">
+        <div class="bubble">Clickea sobre el mapa para interactuar</div>
+      </div>
+      <iframe id="web-aledo-frame" src="pages/mapaaledo.html"></iframe>
+    </div>
   </section>
 
   <!-- Inclusión de la librería Leaflet para mapas (por si se usa en el iframe) -->
@@ -252,13 +301,36 @@
       obs.observe(opts);
       // Redirección al hacer click en una opción
       document.querySelectorAll('.option').forEach(o=>o.addEventListener('click',()=>location.href=o.dataset.link));
+
+      // Requerir clic para activar interacción del mapa
+      const mapGuard = document.getElementById('map-guard');
+      const mapIframe = document.getElementById('web-aledo-frame');
+      const mapWrapper = document.querySelector('.map-frame-wrapper');
+      if (mapGuard && mapIframe && mapWrapper) {
+        let mapActive = false;
+        const activateMap = () => { mapGuard.classList.add('hidden'); mapActive = true; };
+        const deactivateMap = () => { mapGuard.classList.remove('hidden'); mapActive = false; };
+
+        mapGuard.addEventListener('click', activateMap);
+        mapGuard.addEventListener('keydown', (e)=>{ if (e.key==='Enter' || e.key===' ') { e.preventDefault(); activateMap(); } });
+
+        // Re-bloquear cuando se hace clic fuera del área del mapa
+        document.addEventListener('click', (e)=>{ if (mapActive && !mapWrapper.contains(e.target)) { deactivateMap(); } }, true);
+        // Re-bloquear cuando el foco cambia a un elemento fuera del mapa
+        document.addEventListener('focusin', (e)=>{ if (mapActive && !mapWrapper.contains(e.target)) { deactivateMap(); } });
+        // Re-bloquear en el primer scroll después de activar
+        window.addEventListener('scroll', ()=>{ if (mapActive) { deactivateMap(); } }, { passive: true });
+        // Permitir cerrar con Escape
+        document.addEventListener('keydown', (e)=>{ if (mapActive && e.key==='Escape') { deactivateMap(); } });
+      }
     });
   </script>
 
   <!-- Footer informativo con enlaces y datos de contacto -->
   <footer style="background:#25A6F1;color:#fff;padding:40px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;">
     <div><h3 style="margin-bottom:12px;">Banco de Memoria de Aledo</h3><p>Aledo, Murcia</p><p>Tel. 968 123 456</p><p>info@aledomemoria.es</p></div>
-    <div><h3 style="margin-bottom:12px;">Recursos</h3><ul style="list-style:none;padding:0;"><li><a href="pages/patrimonio-material.html" style="color:#fff;text-decoration:none;">Patrimonio Material</a></li><li><a href="pages/patrimonio-inmaterial.html" style="color:#fff;text-decoration:none;">Patrimonio Inmaterial</a></li><li><a href="pages/iniciativas-culturales.html" style="color:#fff;text-decoration:none;">Iniciativas Culturales</a></li><li><a href="pages/memoria-oral.html" style="color:#fff;text-decoration:none;">Memoria Oral</a></li></ul></div>
+    <div><h3 style="margin-bottom:12px;">Recursos</h3><ul style="list-style:none;padding:0;"><li><a href="pages/patrimonio-material.html" style="color:#fff;text-decoration:none;">Patrimonio Material</a></li><li><a href="pages/patrimonio-inmaterial.html" style="color:#fff;text-decoration:none;">Patrimonio Inmaterial</a></li><li><a href="pages/patrimonio-natural.html" style="color:#fff;text-decoration:none;">Patrimonio Natural</a></li><li><a href="pages/huerta-andalusi.html" style="color:#fff;text-decoration:none;">Huerta Andalusí</a></li><li><a href="pages/iniciativas-culturales.html" style="color:#fff;text-decoration:none;">Iniciativas Culturales</a></li><li><a href="pages/memoria-oral.html" style="color:#fff;text-decoration:none;">Memoria Oral</a></li></ul></div>
+    <div><h3 style="margin-bottom:12px;">Gastronomía</h3><ul style="list-style:none;padding:0;"><li><a href="pages/recetario.html" style="color:#fff;text-decoration:none;">Recetario de la Agüela</a></li></ul></div>
     <div><h3 style="margin-bottom:12px;">Información</h3><ul style="list-style:none;padding:0;"><li><a href="#" style="color:#fff;text-decoration:none;">Quiénes Somos</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Colabora</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Política de Privacidad</a></li></ul></div>
     <div><h3 style="margin-bottom:12px;">Redes Sociales</h3><p><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">📘</a><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">🐦</a><a href="#" style="color:#fff;font-size:1.2rem;text-decoration:none;">📸</a></p></div>
   </footer>
