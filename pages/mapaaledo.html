@@ -122,7 +122,9 @@
     .pink  { background:hotpink; }
     .yellow{ background:yellow; }
     .orange{ background:orange; }
+    .teal  { background:#2ecc71; }
     .blue  { background:blue; }
+    .cadetblue { background:cadetblue; }
     /* Tooltip flotante al pasar el ratón por un marcador */
     #hover-tooltip { position:absolute; background:#fff; color:#000; padding:6px 12px; border:1px solid #ccc; border-radius:4px; font-size:14px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity 0.1s; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:2001; }
     #hover-tooltip::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-width:6px 6px 0 6px; border-style:solid; border-color:#fff transparent transparent transparent; }
@@ -175,7 +177,9 @@
       <div class="legend-item selected" data-type="memoria oral" style="transition-delay:0.08s"> <span class="legend-color green"></span>Memoria oral</div>
       <div class="legend-item selected" data-type="patrimonio material" style="transition-delay:0.16s"><span class="legend-color pink"></span>Patrimonio material</div>
       <div class="legend-item selected" data-type="patrimonio inmaterial" style="transition-delay:0.24s"><span class="legend-color yellow"></span>Patrimonio inmaterial</div>
-      <div class="legend-item selected" data-type="cultura" style="transition-delay:0.32s"><span class="legend-color blue"></span>Iniciativas culturales</div>
+      <div class="legend-item selected" data-type="patrimonio natural" style="transition-delay:0.32s"><span class="legend-color teal"></span>Patrimonio natural</div>
+      <div class="legend-item selected" data-type="cultura" style="transition-delay:0.40s"><span class="legend-color blue"></span>Iniciativas culturales</div>
+      <div class="legend-item selected" data-type="huerta" style="transition-delay:0.48s"><span class="legend-color cadetblue"></span>Huerta Andalusí</div>
     </div>
   </div>
   <!-- Tooltip flotante para mostrar nombre al pasar el ratón por un marcador -->
@@ -221,11 +225,13 @@
       'memoria oral':         L.divIcon({className:'legend-color green',  iconSize:[14,14], iconAnchor:[7,7]}),
       'patrimonio material':  L.divIcon({className:'legend-color pink',   iconSize:[14,14], iconAnchor:[7,7]}),
       'patrimonio inmaterial':L.divIcon({className:'legend-color yellow', iconSize:[14,14], iconAnchor:[7,7]}),
-      'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]})
+      'patrimonio natural':   L.divIcon({className:'legend-color teal',   iconSize:[14,14], iconAnchor:[7,7]}),
+      'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]}),
+      'huerta':               L.divIcon({className:'legend-color cadetblue', iconSize:[14,14], iconAnchor:[7,7]})
     };
 
     // Diccionario para guardar los marcadores por tipo
-    var allMarkers = { 'memoria oral':[], 'patrimonio material':[], 'patrimonio inmaterial':[], 'cultura':[] };
+    var allMarkers = { 'memoria oral':[], 'patrimonio material':[], 'patrimonio inmaterial':[], 'patrimonio natural':[], 'cultura':[], 'huerta':[] };
     var tooltip = document.getElementById('hover-tooltip'),
         panel   = document.getElementById('info-panel'),
         content = document.getElementById('panel-content');
@@ -299,6 +305,33 @@
           }
           html += '<p><strong>Descripción:</strong></p>';
           html += '<p style="line-height:1.6;margin-bottom:15px;">'+d.desc+'</p>';
+        } else if(d.tipo==='patrimonio natural'){
+          html += '<h3>'+d.name+'</h3>';
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          } else if(d.photo && d.photo.trim() !== '') {
+            html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
+          }
+          if(d.desc) html += '<p><strong>Descripción:</strong> '+d.desc+'</p>';
+          if(d.chronology) html += '<p><strong>Cronología:</strong> '+d.chronology+'</p>';
+        } else if(d.tipo==='huerta'){
+          html += '<h3>'+d.name+'</h3>';
+          if(d.embed) {
+            html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+            html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+            html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+            html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+            html += '</div>';
+          } else if(d.photo && d.photo.trim() !== '') {
+            html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
+          }
+          if(d.desc) html += '<p><strong>Descripción:</strong> '+d.desc+'</p>';
+          if(d.chronology) html += '<p><strong>Cronología:</strong> '+d.chronology+'</p>';
+          if(d.link) html += '<p><a href="'+d.link+'" target="_blank">Más info</a></p>';
         } else {
           html += '<h3>'+d.name+'</h3>';
           if(d.embed) {
@@ -349,6 +382,7 @@
       res.data.forEach(function(d, idx){
         var tipoRaw = d.tipo;
         var tipo = (tipoRaw || '').toLowerCase().replace(/["\s\uFEFF\xA0]+/g, ' ').trim();
+        if(tipo.startsWith('huerta')) tipo = 'huerta';
         var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
         // DEPURACIÓN: Mostrar tipo crudo y limpio, y si coincide con las claves de iconos
         console.log('Fila', idx, '| tipo raw:', JSON.stringify(tipoRaw), '| tipo limpio:', JSON.stringify(tipo), '| ¿Coincide con iconKeys?:', iconKeys.includes(tipo));
@@ -361,6 +395,7 @@
           // Ya avisado arriba
           return;
         }
+        d.tipo = tipo;
         var m = L.marker([lat,lng],{icon:icons[tipo]}).addTo(map);
         m.data=d; allMarkers[tipo].push(m); addEvents(m);
       });
@@ -417,7 +452,8 @@
                + '<p><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:6px;"></span><strong>Memoria oral</strong></p>'
                + '<p><span style="display:inline-block;width:12px;height:12px;background:hotpink;margin-right:6px;"></span><strong>Patrimonio material</strong></p>'
                + '<p><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:6px;"></span><strong>Patrimonio inmaterial</strong></p>'
-
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:#2ecc71;margin-right:6px;"></span><strong>Patrimonio natural</strong></p>'
+               + '<p><span style="display:inline-block;width:12px;height:12px;background:cadetblue;margin-right:6px;"></span><strong>Huerta Andalusí</strong></p>'
                + '<p><span style="display:inline-block;width:12px;height:12px;background:blue;margin-right:6px;"></span><strong>Iniciativas culturales</strong></p>';
       content.innerHTML = html; panel.classList.add('active');
     });
