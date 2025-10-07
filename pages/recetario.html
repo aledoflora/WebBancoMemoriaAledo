@@ -29,8 +29,6 @@
     .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
     #main-map { 
       height: 400px; 
-      /* border-radius: 10px; */
-      /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); */
       position: relative;
       z-index: 1;
     }
@@ -75,9 +73,9 @@
     }
     #info-panel .modal-content { 
       background:#fff; 
-      width:90%; 
-      max-width:600px; 
-      max-height:80vh; 
+      width:95%; 
+      max-width:900px; 
+      max-height:90vh; 
       overflow-y:auto; 
       position:relative; 
       padding:30px; 
@@ -183,7 +181,7 @@
       <div class="description">
         <h2>Sabores y memoria de Aledo</h2>
         <p>El Recetario de la Agüela recopila platos, dulces y elaboraciones tradicionales que han pasado de generación en generación en Aledo. Cada receta es una historia: de familia, de temporada, de fiestas y de cuidados.</p>
-        <p>Explora, en el mapa y en la galería, recetas vinculadas a personas, lugares y momentos que forman parte del patrimonio gastronómico local.</p>
+        <p>Explora la galería de recetas. Cada elemento contiene una imagen de portada y al hacer clic podrás ver el documento completo con la receta detallada.</p>
       </div>
       
       <div class="map-container">
@@ -203,7 +201,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
   <script>
     // Mapa principal centrado en Aledo con CartoDB Lite
     var map = L.map('main-map', {
@@ -224,18 +221,7 @@
       attribution:'© CartoDB'
     }).addTo(map);
     
-    // Iconos personalizados con bordes rectos
-    var icons = {
-      'memoria oral':         L.divIcon({className:'legend-color green',  iconSize:[14,14], iconAnchor:[7,7]}),
-      'patrimonio material':  L.divIcon({className:'legend-color pink',   iconSize:[14,14], iconAnchor:[7,7]}),
-      'patrimonio inmaterial':L.divIcon({className:'legend-color yellow', iconSize:[14,14], iconAnchor:[7,7]}),
-      'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]}),
-      'recetario':            L.divIcon({className:'legend-color orange', iconSize:[14,14], iconAnchor:[7,7]})
-    };
-    
     // Variables globales
-    var recipeMarkers = [];
-    var activeMarker = null;
     var panel, panelContent;
     
     // Esperar a que el DOM esté listo
@@ -244,59 +230,149 @@
       panelContent = document.getElementById('panel-content');
     });
     
-    // Cargar datos y crear marcadores
-    Papa.parse('../data/datos_aledo.csv', {
-      download: true,
-      header: true,
-      delimiter: ';',
-      complete: function(res) {
-        var galleryGrid = document.querySelector('.gallery-grid');
-        galleryGrid.innerHTML = ''; // Limpiar galería estática
-        
-        res.data.forEach(function(d) {
-          var tipo = (d.tipo || '').toLowerCase().trim();
-          if(tipo === 'recetario') {
-            var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
-            if(!isNaN(lat) && !isNaN(lng)) {
-              var marker = L.marker([lat, lng], {icon: icons['recetario']}).addTo(map);
-              marker.data = d;
-              recipeMarkers.push(marker);
-              
-              // Evento hover para resaltar en galería
-              marker.on('mouseover', function(e) {
-                L.DomEvent.stopPropagation(e);
-                highlightGalleryItem(d.name);
-              });
-              marker.on('mouseout', function(e) {
-                L.DomEvent.stopPropagation(e);
-                removeHighlight();
-              });
-            }
-            
-            // Crear elemento de galería dinámicamente
-            if(d.photo && d.photo.trim() !== '') {
-              var galleryItem = document.createElement('div');
-              galleryItem.className = 'gallery-item recetario';
-              galleryItem.setAttribute('data-name', d.name);
-              
-              galleryItem.innerHTML = `
-                <img src="${d.photo}" alt="${d.name}" onerror="this.style.display='none'">
-                <div class="info">
-                  <h4>${d.name}</h4>
-                </div>
-              `;
-              
-              // Añadir evento click para mostrar modal
-              galleryItem.addEventListener('click', function() {
-                showItemInfo(d);
-              });
-              
-              galleryGrid.appendChild(galleryItem);
-            }
+    // Función para cargar carpetas desde el archivo JSON (opcional)
+    function loadFoldersFromJSON() {
+      return fetch('../data/recetario/carpetas.json')
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('No se pudo cargar el archivo de configuración');
           }
+          return response.json();
+        })
+        .then(function(data) {
+          console.log('Carpetas cargadas desde JSON:', data.carpetas);
+          return data.carpetas;
+        })
+        .catch(function(error) {
+          console.log('JSON no disponible, usando detección automática:', error);
+          return detectRecetarioFolders();
         });
-      }
-    });
+    }
+    
+    // Función para detectar automáticamente las carpetas del recetario
+    function detectRecetarioFolders() {
+      return new Promise(function(resolve) {
+        var folders = [];
+        var maxAttempts = 20; // Máximo número de carpetas a intentar
+        var attempts = 0;
+        var consecutiveFailures = 0;
+        var maxConsecutiveFailures = 3; // Si fallan 3 consecutivas, parar
+        
+        // Lista de posibles nombres de carpetas a probar
+        var possibleNames = [];
+        
+        // Generar nombres de prueba (prueba1, prueba2, etc.)
+        for (var i = 1; i <= maxAttempts; i++) {
+          possibleNames.push('prueba' + i);
+        }
+        
+        // Añadir nombres comunes que podrían existir
+        var commonNames = ['holaaa', 'recetas', 'platos', 'dulces', 'tradicionales'];
+        possibleNames = possibleNames.concat(commonNames);
+        
+        function tryNextFolder() {
+          if (attempts >= possibleNames.length || consecutiveFailures >= maxConsecutiveFailures) {
+            console.log('Detección automática completada. Carpetas encontradas:', folders);
+            resolve(folders);
+            return;
+          }
+          
+          var folderName = possibleNames[attempts];
+          attempts++;
+          
+          var testImage = new Image();
+          
+          testImage.onload = function() {
+            // Si la imagen se carga, la carpeta existe
+            folders.push(folderName);
+            consecutiveFailures = 0; // Resetear contador de fallos
+            console.log('Carpeta detectada automáticamente:', folderName);
+            tryNextFolder();
+          };
+          
+          testImage.onerror = function() {
+            // Si la imagen no se carga, incrementar contador de fallos
+            consecutiveFailures++;
+            console.log('Carpeta no encontrada:', folderName, '(fallos consecutivos:', consecutiveFailures, ')');
+            tryNextFolder();
+          };
+          
+          // Intentar cargar la imagen de la carpeta
+          testImage.src = '../data/recetario/' + folderName + '/cr7.jpg';
+        }
+        
+        tryNextFolder();
+      });
+    }
+    
+    // Función para cargar carpetas del recetario dinámicamente
+    function loadRecetarioFolders() {
+      var galleryGrid = document.querySelector('.gallery-grid');
+      galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;">Cargando recetas...</div>';
+      
+      // Cargar carpetas desde JSON o detectar automáticamente
+      loadFoldersFromJSON().then(function(folders) {
+        galleryGrid.innerHTML = ''; // Limpiar mensaje de carga
+        
+        if (folders.length === 0) {
+          galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">No se encontraron recetas</div>';
+          return;
+        }
+        
+        console.log('Carpetas detectadas:', folders);
+        
+        folders.forEach(function(folderName) {
+          // Crear elemento de galería dinámicamente
+          var galleryItem = document.createElement('div');
+          galleryItem.className = 'gallery-item recetario';
+          galleryItem.setAttribute('data-name', folderName);
+          
+          // Buscar imagen de portada en la carpeta
+          var coverImage = findCoverImage(folderName);
+          
+          galleryItem.innerHTML = `
+            <img src="${coverImage}" alt="${folderName}" onerror="this.style.display='none'">
+            <div class="info">
+              <h4>${folderName}</h4>
+            </div>
+          `;
+          
+          // Añadir evento click para mostrar PDF
+          galleryItem.addEventListener('click', function() {
+            showPDFViewer(folderName);
+          });
+          
+          galleryGrid.appendChild(galleryItem);
+        });
+      }).catch(function(error) {
+        console.error('Error al detectar carpetas:', error);
+        galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#ff0000;">Error al cargar las recetas</div>';
+      });
+    }
+    
+    // Función para encontrar la imagen de portada en una carpeta
+    function findCoverImage(folderName) {
+      // Lista de posibles nombres de archivos de imagen
+      var possibleImages = ['cr7.jpg', 'cover.jpg', 'portada.jpg', 'imagen.jpg', 'foto.jpg'];
+      
+      // Por ahora retornamos la primera opción conocida
+      // En un entorno real, esto se haría con una llamada al servidor para listar archivos
+      return '../data/recetario/' + folderName + '/cr7.jpg';
+    }
+    
+    // Función para encontrar el PDF en una carpeta
+    function findPDF(folderName) {
+      // Lista de posibles nombres de archivos PDF
+      var possiblePDFs = ['PRUEBA.pdf', 'receta.pdf', 'documento.pdf', 'archivo.pdf'];
+      
+      // Por ahora retornamos la primera opción conocida
+      // En un entorno real, esto se haría con una llamada al servidor para listar archivos
+      return '../data/recetario/' + folderName + '/PRUEBA.pdf';
+    }
+    
+    
+    // Cargar carpetas al iniciar
+    loadRecetarioFolders();
     
     // Función para resaltar elemento en galería
     function highlightGalleryItem(name) {
@@ -314,7 +390,35 @@
       });
     }
     
-    // Función para mostrar información del elemento en el modal
+    // Función para mostrar el visor de PDF
+    function showPDFViewer(folderName) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      
+      if (!panel || !panelContent) {
+        return;
+      }
+      
+      panelContent.innerHTML = '';
+      
+      var html = '<h3>' + folderName + '</h3>';
+      
+      // Buscar el PDF en la carpeta
+      var pdfPath = findPDF(folderName);
+      
+      html += '<iframe src="' + pdfPath + '" style="width:100%;height:70vh;border:none;margin-bottom:15px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+      html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+      html += '<p>⚠️ PDF no disponible</p>';
+      html += '<a href="' + pdfPath + '" target="_blank" style="background:#25A6F1; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">📄 Abrir PDF</a>';
+      html += '</div>';
+      
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+    }
+    
+    // Función para mostrar información del elemento en el modal (mantenida para compatibilidad)
     function showItemInfo(d) {
       if (!panel || !panelContent) {
         panel = document.getElementById('info-panel');
@@ -362,23 +466,6 @@
     }
   </script>
   
-  <style>
-    .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
-    .green { background:green; }
-    .pink  { background:hotpink; }
-    .yellow{ background:yellow; }
-    .blue  { background:blue; }
-    .orange{ background:orange; }
-    
-    /* Estilo para marcadores resaltados */
-    .highlighted-marker {
-      box-shadow: 0 0 16px 6px #ffe066, 0 0 2px 2px #fff;
-      border-radius: 50%;
-      transform: scale(1.15) !important;
-      z-index: 1000 !important;
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-  </style>
   <style>
     .gallery {
       background: #fff !important;
