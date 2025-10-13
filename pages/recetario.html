@@ -232,7 +232,7 @@
     
     // Función para cargar carpetas desde el archivo JSON (opcional)
     function loadFoldersFromJSON() {
-  return fetch('../assets/recetario/carpetas.json')
+  return fetch('../recetario/carpetas.json')
         .then(function(response) {
           if (!response.ok) {
             throw new Error('No se pudo cargar el archivo de configuración');
@@ -298,7 +298,7 @@
           };
           
           // Intentar cargar la imagen de la carpeta
-          testImage.src = '../assets/recetario/' + folderName + '/cr7.jpg';
+          testImage.src = '../recetario/' + folderName + '/cr7.jpg';
         }
         
         tryNextFolder();
@@ -357,7 +357,7 @@
       
       // Por ahora retornamos la primera opción conocida
       // En un entorno real, esto se haría con una llamada al servidor para listar archivos
-  return '../assets/recetario/' + folderName + '/cr7.jpg';
+  return '../recetario/' + folderName + '/cr7.jpg';
     }
     
     // Función para encontrar el PDF en una carpeta
@@ -367,7 +367,7 @@
       
       // Por ahora retornamos la primera opción conocida
       // En un entorno real, esto se haría con una llamada al servidor para listar archivos
-  return '../assets/recetario/' + folderName + '/PRUEBA.pdf';
+  return '../recetario/' + folderName + '/PRUEBA.pdf';
     }
     
     
