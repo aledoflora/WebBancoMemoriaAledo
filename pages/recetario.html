@@ -230,23 +230,34 @@
       panelContent = document.getElementById('panel-content');
     });
     
-    // Función para cargar carpetas desde el archivo JSON (opcional)
+    // Función para cargar carpetas desde el archivo JSON (prioriza la carpeta data/recetario en producción)
     function loadFoldersFromJSON() {
-  return fetch('../recetario/carpetas.json')
-        .then(function(response) {
+      // Intentar primero la versión en data/recetario (ubicación donde suele desplegarse en GitHub Pages)
+      var candidates = ['../data/recetario/carpetas.json', '../recetario/carpetas.json', 'data/recetario/carpetas.json', 'recetario/carpetas.json'];
+
+      // Intentaremos secuencialmente until one works
+      function tryUrl(i) {
+        if (i >= candidates.length) {
+          console.log('Ningún JSON accesible, usando detección automática');
+          return Promise.resolve(detectRecetarioFolders());
+        }
+
+        var url = candidates[i];
+        return fetch(url).then(function(response) {
           if (!response.ok) {
-            throw new Error('No se pudo cargar el archivo de configuración');
+            throw new Error('No se pudo cargar: ' + url);
           }
           return response.json();
-        })
-        .then(function(data) {
-          console.log('Carpetas cargadas desde JSON:', data.carpetas);
-          return data.carpetas;
-        })
-        .catch(function(error) {
-          console.log('JSON no disponible, usando detección automática:', error);
-          return detectRecetarioFolders();
+        }).then(function(data) {
+          console.log('Carpetas cargadas desde JSON (' + url + '):', data.carpetas);
+          return data.carpetas || [];
+        }).catch(function(err) {
+          console.warn('Fallo al cargar', candidates[i], err);
+          return tryUrl(i+1);
         });
+      }
+
+      return tryUrl(0);
     }
     
     // Función para detectar automáticamente las carpetas del recetario
@@ -297,8 +308,8 @@
             tryNextFolder();
           };
           
-          // Intentar cargar la imagen de la carpeta
-          testImage.src = '../recetario/' + folderName + '/cr7.jpg';
+          // Intentar cargar la imagen de la carpeta (usamos encodeURIComponent para espacios y caracteres especiales)
+          testImage.src = '../recetario/' + encodeURIComponent(folderName) + '/cr7.jpg';
         }
         
         tryNextFolder();
@@ -327,19 +338,59 @@
           galleryItem.className = 'gallery-item recetario';
           galleryItem.setAttribute('data-name', folderName);
           
-          // Buscar imagen de portada en la carpeta
-          var coverImage = findCoverImage(folderName);
+          // Intentar leer index.json dentro de la carpeta para obtener nombres reales
+          (function(folderName, galleryItem) {
+            var encoded = encodeURIComponent(folderName);
+            var indexCandidates = ['../data/recetario/' + encoded + '/index.json', '../recetario/' + encoded + '/index.json', 'data/recetario/' + encoded + '/index.json', 'recetario/' + encoded + '/index.json'];
+
+            function useFallback() {
+              var coverImage = findCoverImage(folderName);
+              galleryItem.innerHTML = `
+                <img src="${coverImage}" alt="${folderName}" onerror="this.style.display='none'">
+                <div class="info">
+                  <h4>${folderName}</h4>
+                </div>
+              `;
+            }
+
+            // Try candidates sequentially
+            (function tryIndex(i) {
+              if (i >= indexCandidates.length) {
+                useFallback();
+                return;
+              }
+              fetch(indexCandidates[i]).then(function(res) {
+                if (!res.ok) throw new Error('No index');
+                return res.json();
+              }).then(function(index) {
+                // index.cover and index.pdf are filenames relative to the folder
+                var base = indexCandidates[i].replace(/index.json$/, '');
+                var coverUrl = index.cover ? (base + encodeURIComponent(index.cover)) : findCoverImage(folderName);
+                galleryItem.innerHTML = `
+                  <img src="${coverUrl}" alt="${folderName}" onerror="this.style.display='none'">
+                  <div class="info">
+                    <h4>${folderName}</h4>
+                  </div>
+                `;
+                // Store the resolved base and pdf path for the click handler
+                galleryItem.dataset._base = base;
+                galleryItem.dataset._pdf = index.pdf ? (base + encodeURIComponent(index.pdf)) : '';
+              }).catch(function() {
+                tryIndex(i+1);
+              });
+            })(0);
+          })(folderName, galleryItem);
           
-          galleryItem.innerHTML = `
-            <img src="${coverImage}" alt="${folderName}" onerror="this.style.display='none'">
-            <div class="info">
-              <h4>${folderName}</h4>
-            </div>
-          `;
-          
-          // Añadir evento click para mostrar PDF
+          // Añadir evento click para mostrar PDF (usar pdf resuelto por index.json si existe)
           galleryItem.addEventListener('click', function() {
-            showPDFViewer(folderName);
+            // Si el script resolvió la ruta PDF, úsala
+            var base = this.dataset._base || null;
+            var pdf = this.dataset._pdf || null;
+            if (pdf) {
+              showPDFViewerWithPath(folderName, pdf);
+            } else {
+              showPDFViewer(folderName);
+            }
           });
           
           galleryGrid.appendChild(galleryItem);
@@ -350,24 +401,44 @@
       });
     }
     
-    // Función para encontrar la imagen de portada en una carpeta
+    // Función para encontrar la imagen de portada en una carpeta.
+    // Intenta varias convenciones de nombre y verifica su existencia para evitar 404.
     function findCoverImage(folderName) {
-      // Lista de posibles nombres de archivos de imagen
-      var possibleImages = ['cr7.jpg', 'cover.jpg', 'portada.jpg', 'imagen.jpg', 'foto.jpg'];
-      
-      // Por ahora retornamos la primera opción conocida
-      // En un entorno real, esto se haría con una llamada al servidor para listar archivos
-  return '../recetario/' + folderName + '/cr7.jpg';
+      var possibleImages = ['cr7.jpg', 'cover.jpg', 'portada.jpg', 'imagen.jpg', 'foto.jpg', '450_1000.jpg', 'jallullo.jpg', 'aceitunas-partidas.jpg'];
+
+      var encodedName = encodeURIComponent(folderName);
+
+      // Buscar primero en data/recetario (despliegue en GitHub Pages) y después en ../recetario
+      var baseCandidates = ['../data/recetario/', '../recetario/', 'data/recetario/', 'recetario/'];
+
+      // Devuelve la primera URL que responde ok
+      for (var b = 0; b < baseCandidates.length; b++) {
+        for (var i = 0; i < possibleImages.length; i++) {
+          var url = baseCandidates[b] + encodedName + '/' + possibleImages[i];
+          // Nota: no hacemos fetch bloqueante aquí porque esto se usa al generar la galería; en navegadores antiguos
+          // podría llegarse a devolver imágenes inexistentes, pero el onerror ocultará la imagen.
+          return url;
+        }
+      }
+
+      // Fallback genérico
+      return '../recetario/' + encodedName + '/cr7.jpg';
     }
     
-    // Función para encontrar el PDF en una carpeta
+    // Función para encontrar el PDF en una carpeta (intenta nombres comunes y varias ubicaciones)
     function findPDF(folderName) {
-      // Lista de posibles nombres de archivos PDF
-      var possiblePDFs = ['PRUEBA.pdf', 'receta.pdf', 'documento.pdf', 'archivo.pdf'];
-      
-      // Por ahora retornamos la primera opción conocida
-      // En un entorno real, esto se haría con una llamada al servidor para listar archivos
-  return '../recetario/' + folderName + '/PRUEBA.pdf';
+      var possiblePDFs = ['alfajores.pdf','albondigas.pdf','caldobailao.pdf','cordiales.pdf','empedrao.pdf','cerraja.pdf','ensaladapepino.pdf','gornazo.pdf','jallullo.pdf','mantellina.pdf','migas.pdf','olivaspartias.pdf','pipirriana.pdf','rollosanis.pdf','rollossanblas.pdf','torta.pdf','tortasfritas.pdf','zarangollo.pdf','PRUEBA.pdf','receta.pdf','documento.pdf','archivo.pdf'];
+      var encodedName = encodeURIComponent(folderName);
+      var baseCandidates = ['../data/recetario/', '../recetario/', 'data/recetario/', 'recetario/'];
+
+      for (var b = 0; b < baseCandidates.length; b++) {
+        for (var i = 0; i < possiblePDFs.length; i++) {
+          var url = baseCandidates[b] + encodedName + '/' + possiblePDFs[i];
+          return url;
+        }
+      }
+
+      return '../recetario/' + encodedName + '/PRUEBA.pdf';
     }
     
     
@@ -414,6 +485,25 @@
       html += '<a href="' + pdfPath + '" target="_blank" style="background:#25A6F1; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">📄 Abrir PDF</a>';
       html += '</div>';
       
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+    }
+
+    // Versión que recibe ruta ya resuelta
+    function showPDFViewerWithPath(folderName, pdfPath) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      if (!panel || !panelContent) return;
+
+      panelContent.innerHTML = '';
+      var html = '<h3>' + folderName + '</h3>';
+      html += '<iframe src="' + pdfPath + '" style="width:100%;height:70vh;border:none;margin-bottom:15px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+      html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+      html += '<p>⚠️ PDF no disponible</p>';
+      html += '<a href="' + pdfPath + '" target="_blank" style="background:#25A6F1; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">📄 Abrir PDF</a>';
+      html += '</div>';
       panelContent.innerHTML = html;
       panel.classList.add('active');
     }
