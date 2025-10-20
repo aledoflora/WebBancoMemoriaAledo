@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recetario de la Agüela - Banco de Memoria de Aledo</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='hotpink'/></svg>">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; line-height: 1.6; }
@@ -24,21 +23,25 @@
     .description h2 { color: #25A6F1; margin-bottom: 15px; font-size: 1.8rem; }
     .description p { font-size: 1.1rem; line-height: 1.8; color: #555; }
     
-    /* Mapa embebido */
-    .map-container { margin-bottom: 30px; }
-    .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
-    #main-map { 
-      height: 400px; 
-      position: relative;
-      z-index: 1;
+    /* Recetario completo */
+    .recetario-completo { margin-bottom: 30px; }
+    .recetario-completo h2 { color: #25A6F1; margin-bottom: 15px; font-size: 1.8rem; }
+    .recetario-completo iframe { 
+      border-radius: 8px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
     }
-    /* Evitar que el mapa interfiera con el scroll de la página */
-    .leaflet-container {
-      touch-action: pan-x pan-y;
+    .recetario-completo a { 
+      color: #25A6F1; 
+      text-decoration: none; 
+      font-weight: bold;
+      transition: color 0.2s ease;
     }
-    .leaflet-pane {
-      pointer-events: auto;
+    .recetario-completo a:hover { 
+      color: #1e8bc4; 
+      text-decoration: underline;
     }
+    
     
     /* Columna derecha - Galería */
     .right-column { flex: 1; padding: 30px; background: white; }
@@ -153,6 +156,11 @@
     @media (max-width: 768px) {
       .main-container { flex-direction: column; }
       .left-column, .right-column { padding: 20px; }
+      .recetario-completo iframe { height: 400px; }
+    }
+    
+    @media (max-width: 480px) {
+      .recetario-completo iframe { height: 300px; }
     }
   </style>
   <style>
@@ -184,10 +192,12 @@
         <p>Explora la galería de recetas. Cada elemento contiene una imagen de portada y al hacer clic podrás ver el documento completo con la receta detallada.</p>
       </div>
       
-      <div class="map-container">
-        <h3>Ubicación de las recetas</h3>
-        <div id="main-map"></div>
+      <div class="recetario-completo">
+        <h2>Recetario Completo</h2>
+        <iframe width="100%" height="597px" src="https://www.yumpu.com/es/embed/view/RXq2z4VQgb9xUnGa" frameborder="0" allowfullscreen="true" allowtransparency="true"></iframe>
+        <br><a href="https://www.yumpu.com/es/document/view/70816788/recetario-completo" title="Recetario Completo" target="_blank">Recetario Completo</a>
       </div>
+      
     </div>
     
     <div class="right-column">
@@ -200,30 +210,10 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Mapa principal centrado en Aledo con CartoDB Lite
-    var map = L.map('main-map', {
-      zoomControl: false,
-      minZoom: 5,
-      maxBounds: [
-        [27.5, -19.0],
-        [44.5, 5.0]
-      ]
-    }).setView([37.79456, -1.57295], 15);
-    
-    // Añadir controles de zoom
-    L.control.zoom({position:'bottomleft'}).addTo(map);
-    
-    // Mapa base CartoDB Lite
-    var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      maxZoom:19, 
-      attribution:'© CartoDB'
-    }).addTo(map);
-    
-    // Variables globales
+    // Variables para el panel modal
     var panel, panelContent;
-    
+
     // Esperar a que el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
       panel = document.getElementById('info-panel');
@@ -508,7 +498,7 @@
       panel.classList.add('active');
     }
     
-    // Función para mostrar información del elemento en el modal (mantenida para compatibilidad)
+    // Función para mostrar información del elemento en el modal
     function showItemInfo(d) {
       if (!panel || !panelContent) {
         panel = document.getElementById('info-panel');
@@ -541,7 +531,6 @@
       
       panelContent.innerHTML = html;
       panel.classList.add('active');
-      activeMarker = d;
     }
     
     // Función para cerrar el panel
@@ -551,7 +540,6 @@
       }
       if (panel) {
         panel.classList.remove('active');
-        activeMarker = null;
       }
     }
   </script>
