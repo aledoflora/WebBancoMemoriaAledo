@@ -183,18 +183,12 @@
         <p>Explora la Huerta Andalusí de Aledo a través de sus sistemas de captación y distribución del agua, fuentes, lavaderos y obras hidráulicas que han modelado el paisaje y la vida cotidiana.</p>
         <p>En esta sección encontrarás elementos vinculados al agua, al riego y a los saberes agrícolas tradicionales que conectan el mundo andalusí con la memoria viva de Aledo.</p>
       </div>
-      
-      <div class="map-container">
-        <h3>Ubicación de los Elementos</h3>
-        <div id="main-map"></div>
-      </div>
     </div>
-    
     <div class="right-column">
       <div class="gallery">
         <h3>Galería Huerta Andalusí</h3>
         <div class="gallery-grid">
-          <!-- La galería se genera dinámicamente desde el CSV -->
+          <!-- La galería se genera dinámicamente desde las carpetas -->
         </div>
       </div>
     </div>
@@ -360,6 +354,236 @@
     }
   </script>
   
+  <script>
+    // Variables para el panel modal
+    var panel, panelContent;
+
+    // Esperar a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      panel = document.getElementById('info-panel');
+      panelContent = document.getElementById('panel-content');
+    });
+
+    // Función para cargar carpetas desde el archivo JSON (prioriza la carpeta data/huerta)
+    function loadFoldersFromJSON() {
+      var candidates = ['../data/huerta/carpetas.json', '../huerta/carpetas.json', 'data/huerta/carpetas.json', 'huerta/carpetas.json'];
+      function tryUrl(i) {
+        if (i >= candidates.length) {
+          console.log('Ningún JSON accesible, usando detección automática');
+          return Promise.resolve(detectHuertaFolders());
+        }
+        var url = candidates[i];
+        return fetch(url).then(function(response) {
+          if (!response.ok) throw new Error('No se pudo cargar: ' + url);
+          return response.json();
+        }).then(function(data) {
+          console.log('Carpetas cargadas desde JSON (' + url + '):', data.carpetas);
+          return data.carpetas || [];
+        }).catch(function(err) {
+          console.warn('Fallo al cargar', candidates[i], err);
+          return tryUrl(i+1);
+        });
+      }
+      return tryUrl(0);
+    }
+
+    // Función para detectar automáticamente las carpetas de huerta
+    function detectHuertaFolders() {
+      return new Promise(function(resolve) {
+        var folders = [];
+        var maxAttempts = 20;
+        var attempts = 0;
+        var consecutiveFailures = 0;
+        var maxConsecutiveFailures = 3;
+        var possibleNames = [];
+        for (var i = 1; i <= maxAttempts; i++) {
+          possibleNames.push('prueba' + i);
+        }
+        var commonNames = ['acequia', 'fuente', 'lavadero', 'pozo', 'balsa', 'regadio', 'huerta', 'molino'];
+        possibleNames = possibleNames.concat(commonNames);
+        function tryNextFolder() {
+          if (attempts >= possibleNames.length || consecutiveFailures >= maxConsecutiveFailures) {
+            console.log('Detección automática completada. Carpetas encontradas:', folders);
+            resolve(folders);
+            return;
+          }
+          var folderName = possibleNames[attempts];
+          attempts++;
+          var testImage = new Image();
+          testImage.onload = function() {
+            folders.push(folderName);
+            consecutiveFailures = 0;
+            console.log('Carpeta detectada automáticamente:', folderName);
+            tryNextFolder();
+          };
+          testImage.onerror = function() {
+            consecutiveFailures++;
+            console.log('Carpeta no encontrada:', folderName, '(fallos consecutivos:', consecutiveFailures, ')');
+            tryNextFolder();
+          };
+          testImage.src = '../huerta/' + encodeURIComponent(folderName) + '/cover.jpg';
+        }
+        tryNextFolder();
+      });
+    }
+
+    // Función para cargar carpetas de huerta dinámicamente
+    function loadHuertaFolders() {
+      var galleryGrid = document.querySelector('.gallery-grid');
+      galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;">Cargando elementos...</div>';
+      loadFoldersFromJSON().then(function(folders) {
+        galleryGrid.innerHTML = '';
+        if (folders.length === 0) {
+          galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">No se encontraron elementos</div>';
+          return;
+        }
+        console.log('Carpetas detectadas:', folders);
+        folders.forEach(function(folderName) {
+          var galleryItem = document.createElement('div');
+          galleryItem.className = 'gallery-item huerta-andalusi';
+          galleryItem.setAttribute('data-name', folderName);
+          (function(folderName, galleryItem) {
+            var encoded = encodeURIComponent(folderName);
+            var indexCandidates = ['../data/huerta/' + encoded + '/index.json', '../huerta/' + encoded + '/index.json', 'data/huerta/' + encoded + '/index.json', 'huerta/' + encoded + '/index.json'];
+            function useFallback() {
+              var coverImage = findCoverImage(folderName);
+              galleryItem.innerHTML = `
+                <img src="${coverImage}" alt="${folderName}" onerror="this.style.display='none'">
+                <div class="info">
+                  <h4>${folderName}</h4>
+                </div>
+              `;
+            }
+            (function tryIndex(i) {
+              if (i >= indexCandidates.length) {
+                useFallback();
+                return;
+              }
+              fetch(indexCandidates[i]).then(function(res) {
+                if (!res.ok) throw new Error('No index');
+                return res.json();
+              }).then(function(index) {
+                var base = indexCandidates[i].replace(/index.json$/, '');
+                var coverUrl = index.cover ? (base + encodeURIComponent(index.cover)) : findCoverImage(folderName);
+                galleryItem.innerHTML = `
+                  <img src="${coverUrl}" alt="${folderName}" onerror="this.style.display='none'">
+                  <div class="info">
+                    <h4>${folderName}</h4>
+                  </div>
+                `;
+                galleryItem.dataset._base = base;
+                galleryItem.dataset._pdf = index.pdf ? (base + encodeURIComponent(index.pdf)) : '';
+              }).catch(function() {
+                tryIndex(i+1);
+              });
+            })(0);
+          })(folderName, galleryItem);
+          galleryItem.addEventListener('click', function() {
+            var base = this.dataset._base || null;
+            var pdf = this.dataset._pdf || null;
+            if (pdf) {
+              showPDFViewerWithPath(folderName, pdf);
+            } else {
+              showPDFViewer(folderName);
+            }
+          });
+          galleryGrid.appendChild(galleryItem);
+        });
+      }).catch(function(error) {
+        console.error('Error al detectar carpetas:', error);
+        galleryGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#ff0000;">Error al cargar los elementos</div>';
+      });
+    }
+
+    // Función para encontrar la imagen de portada en una carpeta.
+    function findCoverImage(folderName) {
+      var possibleImages = ['cover.jpg', 'portada.jpg', 'imagen.jpg', 'foto.jpg', '450_1000.jpg'];
+      var encodedName = encodeURIComponent(folderName);
+      var baseCandidates = ['../data/huerta/', '../huerta/', 'data/huerta/', 'huerta/'];
+      for (var b = 0; b < baseCandidates.length; b++) {
+        for (var i = 0; i < possibleImages.length; i++) {
+          var url = baseCandidates[b] + encodedName + '/' + possibleImages[i];
+          return url;
+        }
+      }
+      return '../huerta/' + encodedName + '/cover.jpg';
+    }
+
+    // Función para encontrar el PDF en una carpeta
+    function findPDF(folderName) {
+      var possiblePDFs = ['documento.pdf','archivo.pdf','elemento.pdf','huerta.pdf','PRUEBA.pdf'];
+      var encodedName = encodeURIComponent(folderName);
+      var baseCandidates = ['../data/huerta/', '../huerta/', 'data/huerta/', 'huerta/'];
+      for (var b = 0; b < baseCandidates.length; b++) {
+        for (var i = 0; i < possiblePDFs.length; i++) {
+          var url = baseCandidates[b] + encodedName + '/' + possiblePDFs[i];
+          return url;
+        }
+      }
+      return '../huerta/' + encodedName + '/PRUEBA.pdf';
+    }
+
+    // Cargar carpetas al iniciar
+    loadHuertaFolders();
+
+    // Función para resaltar elemento en galería
+    function highlightGalleryItem(name) {
+      removeHighlight();
+      var galleryItem = document.querySelector('.gallery-item[data-name="' + name + '"]');
+      if(galleryItem) {
+        galleryItem.classList.add('highlighted');
+      }
+    }
+    function removeHighlight() {
+      document.querySelectorAll('.gallery-item.highlighted').forEach(function(item) {
+        item.classList.remove('highlighted');
+      });
+    }
+    // Función para mostrar el visor de PDF
+    function showPDFViewer(folderName) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      if (!panel || !panelContent) return;
+      panelContent.innerHTML = '';
+      var html = '<h3>' + folderName + '</h3>';
+      var pdfPath = findPDF(folderName);
+      html += '<iframe src="' + pdfPath + '" style="width:100%;height:70vh;border:none;margin-bottom:15px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+      html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+      html += '<p>⚠️ PDF no disponible</p>';
+      html += '<a href="' + pdfPath + '" target="_blank" style="background:#25A6F1; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">📄 Abrir PDF</a>';
+      html += '</div>';
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+    }
+    function showPDFViewerWithPath(folderName, pdfPath) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      if (!panel || !panelContent) return;
+      panelContent.innerHTML = '';
+      var html = '<h3>' + folderName + '</h3>';
+      html += '<iframe src="' + pdfPath + '" style="width:100%;height:70vh;border:none;margin-bottom:15px;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+      html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+      html += '<p>⚠️ PDF no disponible</p>';
+      html += '<a href="' + pdfPath + '" target="_blank" style="background:#25A6F1; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">📄 Abrir PDF</a>';
+      html += '</div>';
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+    }
+    // Función para cerrar el panel
+    function closePanel() {
+      if (!panel) {
+        panel = document.getElementById('info-panel');
+      }
+      if (panel) {
+        panel.classList.remove('active');
+      }
+    }
+  </script>
+  
   <style>
     .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
     .green { background:green; }
@@ -402,4 +626,4 @@
     </div>
   </div>
 </body>
-</html> 
+</html>

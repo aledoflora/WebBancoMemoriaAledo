@@ -1,10 +1,4 @@
-{
-  "folder": "Olivas Partias",
-  "files": [
-    "aceitunas-partidas.jpg",
-    "olivaspartias.pdf"
-  ],
-  "cover": "aceitunas-partidas.jpg",
-  "pdf": "olivaspartias.pdf",
-  "generatedAt": "2025-10-20T11:07:58.596931Z"
+﻿{
+    "cover":  "aceitunas-partidas.jpg",
+    "pdf":  "olivaspartias.pdf"
 }
