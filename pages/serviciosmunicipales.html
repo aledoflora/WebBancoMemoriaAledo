@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servicios Municipales - Banco de Memoria de Aledo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='cadetblue'/></svg>">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; line-height: 1.6; }
+    header { background: #25A6F1; color: white; padding: 20px; text-align: center; }
+    header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+    .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    .main-container { display: flex; min-height: calc(100vh - 100px); }
+    .left-column { flex: 1; padding: 30px; }
+    .description { margin-bottom: 30px; }
+    .description h2 { color: #25A6F1; margin-bottom: 15px; font-size: 1.8rem; }
+    .description p { font-size: 1.1rem; line-height: 1.8; color: #555; }
+    .map-container { margin-bottom: 30px; }
+    .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
+    #main-map { height: 400px; position: relative; z-index: 1; }
+    .leaflet-container { touch-action: pan-x pan-y; }
+    .leaflet-pane { pointer-events: auto; }
+    .right-column { flex: 1; padding: 30px; background: white; }
+    .gallery h3 { color: #25A6F1; margin-bottom: 20px; font-size: 1.8rem; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    .gallery-item { background: white; border-radius: 0px; overflow: hidden; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+    .gallery-item.highlighted { border: 3px solid cadetblue; }
+    .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
+    .gallery-item .info { padding: 15px; }
+    .gallery-item h4 { color: #25A6F1; margin-bottom: 0px; }
+    .gallery-item p { display: none; }
+    #info-panel { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:2000; opacity:0; visibility:hidden; transition:opacity 0.4s ease, visibility 0.4s ease; }
+    #info-panel.active { opacity:1; visibility:visible; }
+    #info-panel .modal-content { background:#fff; width:90%; max-width:600px; max-height:80vh; overflow-y:auto; position:relative; padding:30px; border-radius: 0px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); transform: scale(0.7) translateY(30px); opacity: 0; transition: transform 0.4s ease, opacity 0.4s ease; scrollbar-width: none; -ms-overflow-style: none; }
+    #info-panel .modal-content::-webkit-scrollbar { display: none; }
+    #info-panel.active .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+    #info-panel .close-btn { position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer; color:#666; transition: color 0.2s ease; }
+    #info-panel .close-btn:hover { color:#000; }
+    #info-panel h3 { margin-top:0; font-size:24px; margin-bottom:20px; color: #000; font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important; }
+    #info-panel iframe { width:100%; height:200px; border:none; margin-bottom:15px; }
+    #info-panel img { width:100%; height:250px; object-fit:cover; margin-bottom:15px; }
+    #info-panel p { font-size:16px; margin:8px 0; line-height:1.6; }
+    #info-panel a { color:#0066cc; text-decoration:underline; font-size:16px; }
+    #panel-content { }
+    #panel-content.fade-out { opacity: 0; transform: translateY(20px); transition: opacity 0.4s, transform 0.4s; }
+    #panel-content.fade-in { opacity: 1; transform: translateY(0); transition: opacity 0.4s, transform 0.4s; }
+    @media (max-width: 768px) { .main-container { flex-direction: column; } .left-column, .right-column { padding: 20px; } }
+  </style>
+  <style>
+    @font-face {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman';
+      src: url('../assets/fonts/NeueHaasDisplayRoman.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'OCR A Extended', monospace !important;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='../index.html'">← Volver</button>
+    <h1>Servicios Municipales</h1>
+  </header>
+  
+  <div class="main-container">
+    <div class="left-column">
+      <div class="description">
+        <h2>Servicios Municipales de Aledo</h2>
+        <p>En esta sección encontrarás información sobre los servicios municipales que ofrece el Ayuntamiento de Aledo. Descubre la ubicación, contacto y detalles de los servicios públicos disponibles para la ciudadanía.</p>
+      </div>
+      <div class="map-container">
+        <h3>Ubicación de los Servicios</h3>
+        <div id="main-map"></div>
+      </div>
+    </div>
+    <div class="right-column">
+      <div class="gallery">
+        <h3>Galería de Servicios Municipales</h3>
+        <div class="gallery-grid">
+          <!-- La galería se genera dinámicamente desde el CSV o fuente de datos -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/papaparse@5.3.1/papaparse.min.js"></script>
+  <script>
+    // Mapa principal centrado en Aledo
+    var map = L.map('main-map', {
+      zoomControl: false,
+      minZoom: 5,
+      maxBounds: [
+        [27.5, -19.0],
+        [44.5, 5.0]
+      ]
+    }).setView([37.79456, -1.57295], 15);
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+    var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      maxZoom:19, 
+      attribution:'© CartoDB'
+    }).addTo(map);
+    var icons = {
+      'servicio municipal':  L.divIcon({className:'legend-color cadetblue', iconSize:[14,14], iconAnchor:[7,7]})
+    };
+    var serviceMarkers = [];
+    var activeMarker = null;
+    var panel, panelContent;
+    document.addEventListener('DOMContentLoaded', function() {
+      panel = document.getElementById('info-panel');
+      panelContent = document.getElementById('panel-content');
+    });
+    // Cargar datos y crear marcadores (ajusta la fuente de datos según tu estructura)
+    Papa.parse('../data/datos_aledo.csv', {
+      download: true,
+      header: true,
+      delimiter: ';',
+      complete: function(res) {
+        var galleryGrid = document.querySelector('.gallery-grid');
+        galleryGrid.innerHTML = '';
+        res.data.forEach(function(d) {
+          var tipo = (d.tipo || '').toLowerCase().trim();
+          if(tipo === 'servicios') {
+            var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
+            if(!isNaN(lat) && !isNaN(lng)) {
+              var marker = L.marker([lat, lng], {icon: icons['servicio municipal']}).addTo(map);
+              marker.data = d;
+              serviceMarkers.push(marker);
+              marker.on('mouseover', function(e) {
+                L.DomEvent.stopPropagation(e);
+                highlightGalleryItem(d.name);
+              });
+              marker.on('mouseout', function(e) {
+                L.DomEvent.stopPropagation(e);
+                removeHighlight();
+              });
+            }
+            if(d.photo && d.photo.trim() !== '') {
+              var galleryItem = document.createElement('div');
+              galleryItem.className = 'gallery-item servicio-municipal';
+              galleryItem.setAttribute('data-name', d.name);
+              galleryItem.innerHTML = `
+                <img src="${d.photo}" alt="${d.name}" onerror="this.style.display='none'">
+                <div class="info">
+                  <h4>${d.name}</h4>
+                </div>
+              `;
+              galleryItem.addEventListener('click', function() {
+                showItemInfo(d);
+              });
+              galleryGrid.appendChild(galleryItem);
+            }
+          }
+        });
+      }
+    });
+    function highlightGalleryItem(name) {
+      removeHighlight();
+      var galleryItem = document.querySelector('.gallery-item[data-name="' + name + '"]');
+      if(galleryItem) {
+        galleryItem.classList.add('highlighted');
+      }
+    }
+    function removeHighlight() {
+      document.querySelectorAll('.gallery-item.highlighted').forEach(function(item) {
+        item.classList.remove('highlighted');
+      });
+    }
+    function showItemInfo(d) {
+      if (!panel || !panelContent) {
+        panel = document.getElementById('info-panel');
+        panelContent = document.getElementById('panel-content');
+      }
+      if (!panel || !panelContent) {
+        return;
+      }
+      panelContent.innerHTML = '';
+      var html = '<h3>' + d.name + '</h3>';
+      if(d.embed) {
+        html += '<iframe src="'+d.embed+'" allowfullscreen onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\'"></iframe>';
+        html += '<div style="display:none; padding:20px; background:#f0f0f0; text-align:center; border-radius:8px; margin-bottom:15px;">';
+        html += '<p>⚠️ Video no disponible (bloqueador de anuncios detectado)</p>';
+        html += '<a href="'+d.embed+'" target="_blank" style="background:#ff0000; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">▶️ Ver en YouTube</a>';
+        html += '</div>';
+      } else if(d.photo && d.photo.trim() !== '') {
+        html += '<img src="'+d.photo+'" style="width:100%;height:250px;object-fit:cover;margin-bottom:15px;" onerror="this.style.display=\'none\'">';
+      }
+      if(d.desc) html += '<p><strong>Descripción:</strong> ' + d.desc + '</p>';
+      if(d.contact) html += '<p><strong>Contacto:</strong> ' + d.contact + '</p>';
+      if(d.link) html += '<p><strong>Enlace:</strong> <a href="'+d.link+'" target="_blank">' + d.link + '</a></p>';
+      if(d.organizer) html += '<p><strong>Organizador:</strong> ' + d.organizer + '</p>';
+      panelContent.innerHTML = html;
+      panel.classList.add('active');
+      activeMarker = d;
+    }
+    function closePanel() {
+      if (!panel) {
+        panel = document.getElementById('info-panel');
+      }
+      if (panel) {
+        panel.classList.remove('active');
+        activeMarker = null;
+      }
+    }
+  </script>
+  <style>
+    .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
+    .cadetblue { background:cadetblue; }
+    .highlighted-marker { box-shadow: 0 0 16px 6px #ffe066, 0 0 2px 2px #fff; border-radius: 50%; transform: scale(1.15) !important; z-index: 1000 !important; transition: box-shadow 0.2s, transform 0.2s; }
+  </style>
+  <style>
+    .gallery { background: #fff !important; }
+    .gallery-item { border-radius: 0 !important; box-shadow: none !important; border: 3px solid transparent; transition: border-color 0.2s; }
+    .gallery-item.servicio-municipal:hover, .gallery-item.servicio-municipal.highlighted { border-color: cadetblue !important; }
+  </style>
+  <div id="info-panel" onclick="closePanel()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="close-btn" onclick="closePanel()">×</div>
+      <div id="panel-content"></div>
+    </div>
+  </div>
+</body>
+</html>
