@@ -174,12 +174,13 @@
       </span>
     </div>
     <div id="legend-filters">
-      <div class="legend-item selected" data-type="memoria oral" style="transition-delay:0.08s"> <span class="legend-color green"></span>Memoria oral</div>
-      <div class="legend-item selected" data-type="patrimonio material" style="transition-delay:0.16s"><span class="legend-color pink"></span>Patrimonio material</div>
-      <div class="legend-item selected" data-type="patrimonio inmaterial" style="transition-delay:0.24s"><span class="legend-color yellow"></span>Patrimonio inmaterial</div>
-      <div class="legend-item selected" data-type="patrimonio natural" style="transition-delay:0.32s"><span class="legend-color teal"></span>Patrimonio natural</div>
-      <div class="legend-item selected" data-type="cultura" style="transition-delay:0.40s"><span class="legend-color blue"></span>Iniciativas culturales</div>
-      <div class="legend-item selected" data-type="huerta" style="transition-delay:0.48s"><span class="legend-color cadetblue"></span>Huerta Andalusí</div>
+  <div class="legend-item selected" data-type="memoria oral" style="transition-delay:0.08s"> <span class="legend-color green"></span>Memoria oral</div>
+  <div class="legend-item selected" data-type="patrimonio material" style="transition-delay:0.16s"><span class="legend-color pink"></span>Patrimonio material</div>
+  <div class="legend-item selected" data-type="patrimonio inmaterial" style="transition-delay:0.24s"><span class="legend-color yellow"></span>Patrimonio inmaterial</div>
+  <div class="legend-item selected" data-type="patrimonio natural" style="transition-delay:0.32s"><span class="legend-color teal"></span>Patrimonio natural</div>
+  <div class="legend-item selected" data-type="cultura" style="transition-delay:0.40s"><span class="legend-color blue"></span>Iniciativas culturales</div>
+  <div class="legend-item selected" data-type="huerta" style="transition-delay:0.48s"><span class="legend-color cadetblue"></span>Huerta Andalusí</div>
+  <div class="legend-item selected" data-type="servicios" style="transition-delay:0.56s"><span class="legend-color orange"></span>Servicios municipales</div>
     </div>
   </div>
   <!-- Tooltip flotante para mostrar nombre al pasar el ratón por un marcador -->
@@ -227,11 +228,12 @@
       'patrimonio inmaterial':L.divIcon({className:'legend-color yellow', iconSize:[14,14], iconAnchor:[7,7]}),
       'patrimonio natural':   L.divIcon({className:'legend-color teal',   iconSize:[14,14], iconAnchor:[7,7]}),
       'cultura':              L.divIcon({className:'legend-color blue',   iconSize:[14,14], iconAnchor:[7,7]}),
-      'huerta':               L.divIcon({className:'legend-color cadetblue', iconSize:[14,14], iconAnchor:[7,7]})
+      'huerta':               L.divIcon({className:'legend-color cadetblue', iconSize:[14,14], iconAnchor:[7,7]}),
+      'servicios':            L.divIcon({className:'legend-color orange', iconSize:[14,14], iconAnchor:[7,7]})
     };
 
     // Diccionario para guardar los marcadores por tipo
-    var allMarkers = { 'memoria oral':[], 'patrimonio material':[], 'patrimonio inmaterial':[], 'patrimonio natural':[], 'cultura':[], 'huerta':[] };
+  var allMarkers = { 'memoria oral':[], 'patrimonio material':[], 'patrimonio inmaterial':[], 'patrimonio natural':[], 'cultura':[], 'huerta':[], 'servicios':[] };
     var tooltip = document.getElementById('hover-tooltip'),
         panel   = document.getElementById('info-panel'),
         content = document.getElementById('panel-content');
@@ -332,6 +334,14 @@
           if(d.desc) html += '<p><strong>Descripción:</strong> '+d.desc+'</p>';
           if(d.chronology) html += '<p><strong>Cronología:</strong> '+d.chronology+'</p>';
           if(d.link) html += '<p><a href="'+d.link+'" target="_blank">Más info</a></p>';
+        } else if(d.tipo==='servicios') {
+          html += '<h3>'+d.name+'</h3>';
+          if(d.photo && d.photo.trim() !== '') {
+            html += '<img src="'+d.photo+'" style="width:100%;height:180px;object-fit:contain;margin-bottom:15px;background:#fff;" onerror="this.style.display=\'none\'">';
+          }
+          if(d.desc) html += '<p><strong>Descripción:</strong> '+d.desc+'</p>';
+          if(d.contact) html += '<p><strong>Contacto:</strong> '+d.contact+'</p>';
+          if(d.link) html += '<p><strong>Enlace:</strong> <a href="'+d.link+'" target="_blank">'+d.link+'</a></p>';
         } else {
           html += '<h3>'+d.name+'</h3>';
           if(d.embed) {
@@ -383,6 +393,7 @@
         var tipoRaw = d.tipo;
         var tipo = (tipoRaw || '').toLowerCase().replace(/["\s\uFEFF\xA0]+/g, ' ').trim();
         if(tipo.startsWith('huerta')) tipo = 'huerta';
+        if(tipo.startsWith('servicio')) tipo = 'servicios';
         var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
         // DEPURACIÓN: Mostrar tipo crudo y limpio, y si coincide con las claves de iconos
         console.log('Fila', idx, '| tipo raw:', JSON.stringify(tipoRaw), '| tipo limpio:', JSON.stringify(tipo), '| ¿Coincide con iconKeys?:', iconKeys.includes(tipo));
@@ -447,14 +458,15 @@
     // Botón de información sobre el proyecto
     document.getElementById('about-btn').addEventListener('click',function(e){
       e.stopPropagation();
-      var html = '<h3>Sobre el proyecto</h3>'
-               + '<p>"Banco de Memoria de Aledo" preserva relatos orales de nuestros mayores y los geolocaliza para fomentar memoria colectiva.</p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:6px;"></span><strong>Memoria oral</strong></p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:hotpink;margin-right:6px;"></span><strong>Patrimonio material</strong></p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:6px;"></span><strong>Patrimonio inmaterial</strong></p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:#2ecc71;margin-right:6px;"></span><strong>Patrimonio natural</strong></p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:cadetblue;margin-right:6px;"></span><strong>Huerta Andalusí</strong></p>'
-               + '<p><span style="display:inline-block;width:12px;height:12px;background:blue;margin-right:6px;"></span><strong>Iniciativas culturales</strong></p>';
+  var html = '<h3>Sobre el proyecto</h3>'
+       + '<p>"Banco de Memoria de Aledo" preserva relatos orales de nuestros mayores y los geolocaliza para fomentar memoria colectiva.</p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:6px;"></span><strong>Memoria oral</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:hotpink;margin-right:6px;"></span><strong>Patrimonio material</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:6px;"></span><strong>Patrimonio inmaterial</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:#2ecc71;margin-right:6px;"></span><strong>Patrimonio natural</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:cadetblue;margin-right:6px;"></span><strong>Huerta Andalusí</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:orange;margin-right:6px;"></span><strong>Servicios municipales</strong></p>'
+       + '<p><span style="display:inline-block;width:12px;height:12px;background:blue;margin-right:6px;"></span><strong>Iniciativas culturales</strong></p>';
       content.innerHTML = html; panel.classList.add('active');
     });
 

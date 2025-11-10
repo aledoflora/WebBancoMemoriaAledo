@@ -37,7 +37,7 @@
       justify-content: center;
       align-items: center;
     }
-    .gallery-item.highlighted { border: 3px solid cadetblue; }
+    .gallery-item.highlighted { border: 3px solid orange; }
     .gallery-item img {
       width: 100%;
       height: 200px;
@@ -126,7 +126,7 @@
       attribution:'© CartoDB'
     }).addTo(map);
     var icons = {
-      'servicio municipal':  L.divIcon({className:'legend-color cadetblue', iconSize:[14,14], iconAnchor:[7,7]})
+      'servicios':  L.divIcon({className:'legend-color orange', iconSize:[14,14], iconAnchor:[7,7]})
     };
     var serviceMarkers = [];
     var activeMarker = null;
@@ -143,14 +143,19 @@
       complete: function(res) {
         var galleryGrid = document.querySelector('.gallery-grid');
         galleryGrid.innerHTML = '';
+        console.log('Total filas CSV:', res.data.length);
         res.data.forEach(function(d) {
           var tipo = (d.tipo || '').toLowerCase().trim();
+          console.log('Procesando:', d.name, 'tipo:', tipo);
           if(tipo === 'servicios') {
+            console.log('✓ Es servicio:', d.name);
             var lat = parseFloat(d.coordsLat), lng = parseFloat(d.coordsLng);
+            console.log('Coordenadas:', lat, lng);
             if(!isNaN(lat) && !isNaN(lng)) {
-              var marker = L.marker([lat, lng], {icon: icons['servicio municipal']}).addTo(map);
+              var marker = L.marker([lat, lng], {icon: icons['servicios']}).addTo(map);
               marker.data = d;
               serviceMarkers.push(marker);
+              console.log('✓ Marcador añadido al mapa:', d.name);
               marker.on('mouseover', function(e) {
                 L.DomEvent.stopPropagation(e);
                 highlightGalleryItem(d.name);
@@ -159,6 +164,12 @@
                 L.DomEvent.stopPropagation(e);
                 removeHighlight();
               });
+              marker.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                showItemInfo(d);
+              });
+            } else {
+              console.log('✗ Coordenadas inválidas para:', d.name);
             }
             if(d.photo && d.photo.trim() !== '') {
               var galleryItem = document.createElement('div');
@@ -231,12 +242,13 @@
   <style>
     .legend-color { width:12px; height:12px; margin-right:10px; border-radius:0px; }
     .cadetblue { background:cadetblue; }
+    .orange { background:orange; }
     .highlighted-marker { box-shadow: 0 0 16px 6px #ffe066, 0 0 2px 2px #fff; border-radius: 50%; transform: scale(1.15) !important; z-index: 1000 !important; transition: box-shadow 0.2s, transform 0.2s; }
   </style>
   <style>
     .gallery { background: #fff !important; }
     .gallery-item { border-radius: 0 !important; box-shadow: none !important; border: 3px solid transparent; transition: border-color 0.2s; }
-    .gallery-item.servicio-municipal:hover, .gallery-item.servicio-municipal.highlighted { border-color: cadetblue !important; }
+    .gallery-item.servicio-municipal:hover, .gallery-item.servicio-municipal.highlighted { border-color: orange !important; }
   </style>
   <div id="info-panel" onclick="closePanel()">
     <div class="modal-content" onclick="event.stopPropagation()">

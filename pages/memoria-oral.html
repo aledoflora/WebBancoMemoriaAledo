@@ -115,7 +115,7 @@
     }
     #info-panel iframe { 
       width:100%; 
-      height:200px; 
+      height:338px; 
       border:none; 
       margin-bottom:15px; 
     }
@@ -273,14 +273,17 @@
               oralMarkers.push(marker);
               
               // Evento hover para resaltar en galería (sin scroll)
-              marker.on('mouseover', function(e) {
-                L.DomEvent.stopPropagation(e);
-                highlightGalleryItem(d.name);
-              });
-              marker.on('mouseout', function(e) {
-                L.DomEvent.stopPropagation(e);
-                removeHighlight();
-              });
+              // Usar una IIFE para capturar correctamente el valor de d Y marker
+              (function(itemData, markerRef) {
+                markerRef.on('mouseover', function(e) {
+                  L.DomEvent.stopPropagation(e);
+                  highlightGalleryItem(itemData.name);
+                });
+                markerRef.on('mouseout', function(e) {
+                  L.DomEvent.stopPropagation(e);
+                  removeHighlight();
+                });
+              })(d, marker);
             }
             
             // Crear elemento de galería
@@ -298,10 +301,12 @@
               </div>
             `;
             
-            // Añadir evento de clic para abrir el panel
-            galleryItem.addEventListener('click', function() {
-              showItemInfo(d);
-            });
+            // Añadir evento de clic para abrir el panel - también necesita IIFE
+            (function(itemData) {
+              galleryItem.addEventListener('click', function() {
+                showItemInfo(itemData);
+              });
+            })(d);
             
             galleryContainer.appendChild(galleryItem);
           }
