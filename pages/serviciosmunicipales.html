@@ -19,7 +19,7 @@
     .description p { font-size: 1.1rem; line-height: 1.8; color: #555; }
     .map-container { margin-bottom: 30px; }
     .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
-    #main-map { height: 400px; position: relative; z-index: 1; }
+    #main-map { height: 600px; position: relative; z-index: 1; }
     .leaflet-container { touch-action: pan-x pan-y; }
     .leaflet-pane { pointer-events: auto; }
     .right-column { flex: 1; padding: 30px; background: white; }
@@ -121,10 +121,32 @@
       ]
     }).setView([37.79456, -1.57295], 15);
     L.control.zoom({position:'bottomleft'}).addTo(map);
+    
+    // Mapas base
     var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
       maxZoom:19, 
       attribution:'© CartoDB'
-    }).addTo(map);
+    });
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:19, 
+      attribution:'© OpenStreetMap contributors'
+    });
+    var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom:19, 
+      attribution:'Tiles © Esri'
+    });
+
+    var baseMaps = {
+      "CartoDB Light": cartoLight,
+      "OpenStreetMap": osm,
+      "Esri Satélite": esriSat
+    };
+
+    esriSat.addTo(map); // El predeterminado
+
+    // Control de capas abajo a la derecha
+    L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(map);
+    
     var icons = {
       'servicios':  L.divIcon({className:'legend-color orange', iconSize:[14,14], iconAnchor:[7,7]})
     };

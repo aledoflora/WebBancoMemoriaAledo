@@ -28,7 +28,9 @@
     .map-container { margin-bottom: 30px; }
     .map-container h3 { color: #25A6F1; margin-bottom: 15px; }
     #main-map {
-      height: 400px;
+      height: 600px; 
+      /* border-radius: 10px; */
+      /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); */
       position: relative;
       z-index: 1;
     }
@@ -238,11 +240,30 @@
     // Añadir controles de zoom
     L.control.zoom({position:'bottomleft'}).addTo(map);
     
-    // Mapa base CartoDB Lite
+    // Mapas base
     var cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
       maxZoom:19, 
       attribution:'© CartoDB'
-    }).addTo(map);
+    });
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:19, 
+      attribution:'© OpenStreetMap contributors'
+    });
+    var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom:19, 
+      attribution:'Tiles © Esri'
+    });
+
+    var baseMaps = {
+      "CartoDB Light": cartoLight,
+      "OpenStreetMap": osm,
+      "Esri Satélite": esriSat
+    };
+
+    esriSat.addTo(map); // El predeterminado
+
+    // Control de capas abajo a la derecha
+    L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(map);
     
     // Iconos personalizados con bordes rectos
     var icons = {
