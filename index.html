@@ -7,8 +7,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Landing Banco de Memoria de Aledo</title>
+  <title>Patrimonio de Aledo</title>
   <link rel="icon" href="assets/images/hero/favicon.png">
+    <link rel="shortcut icon" href="assets/images/hero/favicon.png" type="image/png">
   <!-- Hoja de estilos de Leaflet para mapas -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
@@ -126,6 +127,17 @@
       filter: grayscale(1);
       transition: filter 0.4s;
     }
+    /* Imagen del ministerio en la esquina inferior derecha del hero */
+    .ministerio-logo {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      z-index: 20;
+      width: 320px;
+      max-width: 45vw;
+      opacity: 0.95;
+      pointer-events: none;
+    }
     .option:hover img {
       filter: none;
     }
@@ -184,6 +196,8 @@
         <h1>Bienvenido a Aledo</h1>
         <p>Explora nuestro patrimonio, iniciativas culturales y la memoria de sus gentes.</p>
       </div>
+        <!-- Logo del Ministerio en la esquina inferior derecha -->
+        <img src="assets/images/ministerio.png" alt="Ministerio de Cultura" class="ministerio-logo">
       <!-- Botones para navegar el carrusel -->
       <button class="prev">&#10094;</button>
       <button class="next">&#10095;</button>
@@ -345,6 +359,9 @@
     <div><h3 style="margin-bottom:12px;">Gastronomía</h3><ul style="list-style:none;padding:0;"><li><a href="pages/recetario.html" style="color:#fff;text-decoration:none;">Recetario de la Agüela</a></li></ul></div>
     <div><h3 style="margin-bottom:12px;">Información</h3><ul style="list-style:none;padding:0;"><li><a href="#" style="color:#fff;text-decoration:none;">Quiénes Somos</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Colabora</a></li><li><a href="#" style="color:#fff;text-decoration:none;">Política de Privacidad</a></li></ul></div>
     <div><h3 style="margin-bottom:12px;">Redes Sociales</h3><p><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">📘</a><a href="#" style="color:#fff;margin-right:8px;font-size:1.2rem;text-decoration:none;">🐦</a><a href="#" style="color:#fff;font-size:1.2rem;text-decoration:none;">📸</a></p></div>
+    <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: flex-start; position: relative; margin-top: 0; margin-bottom: 0;">
+      <img src="assets/images/ministerio.png" alt="Ministerio de Cultura" style="height: 60px; max-width: 40vw; opacity: 0.95; margin-top: -180px;">
+    </div>
   </footer>
 </body>
 </html>
