@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Recreaciones 3D - Banco de Memoria de Aledo</title>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='deepskyblue'/></svg>">
+	<style>
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body {
+			font-family: 'Segoe UI', Tahoma, sans-serif;
+			color: #333;
+			line-height: 1.6;
+			background: #ffffff;
+		}
+
+		/* Header */
+		header {
+			position: relative;
+			background: #25A6F1;
+			color: white;
+			padding: 20px;
+			text-align: center;
+		}
+		header h1 { font-size: 2.5rem; margin-bottom: 0; }
+		.back-btn {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			background: rgba(255,255,255,0.2);
+			border: none;
+			color: white;
+			padding: 10px 15px;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 1rem;
+		}
+
+		/* Contenido principal */
+		.main-container {
+			min-height: calc(100vh - 92px);
+			padding: 30px;
+		}
+
+		.intro {
+			width: 100%;
+			max-width: 980px;
+			text-align: left;
+		}
+
+		.intro h2 {
+			color: #25A6F1;
+			font-size: 2.2rem;
+			margin-bottom: 18px;
+		}
+
+		.intro p {
+			font-size: 1.2rem;
+			color: #555;
+			max-width: 900px;
+			margin: 0;
+		}
+
+		@media (max-width: 768px) {
+			header h1 { font-size: 2rem; }
+			.back-btn {
+				position: static;
+				display: inline-block;
+				margin-bottom: 12px;
+			}
+			.intro h2 { font-size: 1.8rem; }
+			.intro p { font-size: 1.05rem; }
+			.main-container {
+				min-height: calc(100vh - 120px);
+				padding: 20px;
+			}
+		}
+	</style>
+	<style>
+		@font-face {
+			font-family: 'Neue Haas Grotesk Display Pro 55 Roman';
+			src: url('../assets/fonts/NeueHaasDisplayRoman.ttf') format('truetype');
+			font-weight: normal;
+			font-style: normal;
+		}
+		body {
+			font-family: 'Neue Haas Grotesk Display Pro 55 Roman', sans-serif !important;
+		}
+		h1, h2, h3, h4, h5, h6 {
+			font-family: 'OCR A Extended', monospace !important;
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<button class="back-btn" onclick="window.location.href='../index.html'">← Volver</button>
+		<h1>Recreaciones 3D</h1>
+	</header>
+
+	<main class="main-container">
+		<section class="intro">
+			<h2>Viaje Virtual por Aledo</h2>
+			<p>En esta página podrás ver vídeos e imágenes de recreaciones 3D de distintos rincones del pueblo para conocer su historia y su evolución de una manera visual, cercana e inmersiva.</p>
+		</section>
+	</main>
+</body>
+</html>
