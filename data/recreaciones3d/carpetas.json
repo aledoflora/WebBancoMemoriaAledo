@@ -1,0 +1,216 @@
+﻿{
+    "ultimaActualizacion":  "2026-04-29T02:53:29.6040346+02:00",
+    "notas":  "Generado automaticamente desde carpetas con GLB Draco en data/recreaciones3d",
+    "elementos":  [
+                      {
+                          "nombre":  "Tablero Ajedrez",
+                          "carpeta":  "1.tablero ajedrez",
+                          "glb":  "ajedrez glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "ajedrez glb.glb"
+                      },
+                      {
+                          "nombre":  "Carretilla",
+                          "carpeta":  "10.carretilla",
+                          "glb":  "carretilla glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "carretilla glb.glb"
+                      },
+                      {
+                          "nombre":  "Escudo Combate",
+                          "carpeta":  "11. escudo combate",
+                          "glb":  "carro combate glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "carro combate glb.glb"
+                      },
+                      {
+                          "nombre":  "Cascos",
+                          "carpeta":  "12. cascos",
+                          "glb":  "casco glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "casco glb.glb"
+                      },
+                      {
+                          "nombre":  "Cubiertos",
+                          "carpeta":  "13. cubiertos",
+                          "glb":  "cubiertos glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "cubiertos glb.glb"
+                      },
+                      {
+                          "nombre":  "Escudo Pasivo",
+                          "carpeta":  "14. escudo pasivo",
+                          "glb":  "escudo pasivo.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "escudo pasivo.glb"
+                      },
+                      {
+                          "nombre":  "Escudos",
+                          "carpeta":  "15. escudos",
+                          "glb":  "escudos glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "escudos glb.glb"
+                      },
+                      {
+                          "nombre":  "Grua",
+                          "carpeta":  "16. grua",
+                          "glb":  "grua glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "grua glb.glb"
+                      },
+                      {
+                          "nombre":  "Banco",
+                          "carpeta":  "17. banco",
+                          "glb":  "banco glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "banco glb.glb"
+                      },
+                      {
+                          "nombre":  "Jarras De Barro",
+                          "carpeta":  "18. jarras de barro",
+                          "glb":  "jarrones de barro.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "jarrones de barro.glb"
+                      },
+                      {
+                          "nombre":  "Vasijas Y Jarrones De Barro",
+                          "carpeta":  "19. vasijas y jarrones de barro",
+                          "glb":  "vasijas glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "vasijas glb.glb"
+                      },
+                      {
+                          "nombre":  "Antorcha",
+                          "carpeta":  "2.antorcha",
+                          "glb":  "antorcha glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "antorcha glb.glb"
+                      },
+                      {
+                          "nombre":  "Jarrones Para Bebidas Y Comidas",
+                          "carpeta":  "20. jarrones para bebidas y comidas",
+                          "glb":  "jarrones de miel glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "jarrones de miel glb.glb"
+                      },
+                      {
+                          "nombre":  "Ladrillo De Barro",
+                          "carpeta":  "21. ladrillo de barro",
+                          "glb":  "ladrillo glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "ladrillo glb.glb"
+                      },
+                      {
+                          "nombre":  "Maza Gotica",
+                          "carpeta":  "22. maza gotica",
+                          "glb":  "mazo guerra glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "mazo guerra glb.glb"
+                      },
+                      {
+                          "nombre":  "Mortero",
+                          "carpeta":  "23. mortero",
+                          "glb":  "mortero glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "mortero glb.glb"
+                      },
+                      {
+                          "nombre":  "Yunque",
+                          "carpeta":  "24. yunque",
+                          "glb":  "yunque glb.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "yunque glb.glb"
+                      },
+                      {
+                          "nombre":  "Sacos De Tela",
+                          "carpeta":  "25. sacos de tela",
+                          "glb":  "sacos harina.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "sacos harina.glb"
+                      },
+                      {
+                          "nombre":  "Silla Savonarola",
+                          "carpeta":  "26. silla savonarola",
+                          "glb":  "silla glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "silla glb.glb"
+                      },
+                      {
+                          "nombre":  "Jaima",
+                          "carpeta":  "27. jaima",
+                          "glb":  "tienda glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "tienda glb.glb"
+                      },
+                      {
+                          "nombre":  "Trono Madera",
+                          "carpeta":  "28. trono madera",
+                          "glb":  "trono madera glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "trono madera glb.glb"
+                      },
+                      {
+                          "nombre":  "Vestimenta Noble",
+                          "carpeta":  "29. vestimenta noble",
+                          "glb":  "vestimenta noble.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "vestimenta noble.glb"
+                      },
+                      {
+                          "nombre":  "Ballesta",
+                          "carpeta":  "3. ballesta",
+                          "glb":  "ballesta glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "ballesta glb.glb"
+                      },
+                      {
+                          "nombre":  "Mini Cofre",
+                          "carpeta":  "30. mini cofre",
+                          "glb":  "mini cofre glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "mini cofre glb.glb"
+                      },
+                      {
+                          "nombre":  "Ballesta Grande",
+                          "carpeta":  "4. ballesta grande",
+                          "glb":  "ballesta grande glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "ballesta grande glb.glb"
+                      },
+                      {
+                          "nombre":  "Toneles",
+                          "carpeta":  "5. toneles",
+                          "glb":  "barriles glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "barriles glb.glb"
+                      },
+                      {
+                          "nombre":  "Baúl",
+                          "carpeta":  "6. baúl",
+                          "glb":  "baul glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "baul glb.glb"
+                      },
+                      {
+                          "nombre":  "Campesino",
+                          "carpeta":  "7. campesino",
+                          "glb":  "campesino glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "campesino glb.glb"
+                      },
+                      {
+                          "nombre":  "Candelabro",
+                          "carpeta":  "8.candelabro",
+                          "glb":  "candelabro glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "candelabro glb.glb"
+                      },
+                      {
+                          "nombre":  "Carreta",
+                          "carpeta":  "9. carreta",
+                          "glb":  "carreta glb.draco.glb",
+                          "descripcion":  "Modelo 3D del patrimonio local de Aledo.",
+                          "glbOriginal":  "carreta glb.glb"
+                      }
+                  ]
+}
