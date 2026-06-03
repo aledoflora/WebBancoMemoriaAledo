@@ -181,6 +181,107 @@
     .option:hover {
       box-shadow: none !important;
     }
+
+    /* Estilos para los apartados de Recreaciones 3D e Información de Interés */
+    .extra-info-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2px 0 40px 0;
+    }
+    .extra-info-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      align-items: center;
+      padding: 0 20px;
+      position: relative;
+    }
+    .extra-info-item {
+      justify-self: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 320px;
+    }
+    .extra-info-item.item-3d {
+      grid-column: 1 / span 2;
+    }
+    .extra-info-item.item-servicios {
+      grid-column: 3 / span 2;
+    }
+    .extra-info-title {
+      height: 56px;
+      font-size: 1.15rem;
+      font-family: 'OCR A Extended', monospace;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+      color: #333;
+    }
+    .extra-info-title span {
+      white-space: nowrap;
+    }
+    .extra-info-button {
+      width: 300px;
+      height: 72px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #25A6F1;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-family: 'OCR A Extended', monospace;
+      box-shadow: 0 4px 16px rgba(37,166,241,0.15);
+      font-weight: bold;
+      letter-spacing: 2px;
+      transition: background 0.2s;
+      cursor: pointer;
+      text-align: center;
+    }
+    .extra-info-button:hover {
+      background: #1b8dd1;
+    }
+    .extra-info-divider {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px;
+      height: 48px;
+      background: rgba(37,166,241,0.55);
+    }
+
+    /* Media query para móviles: evitar solapamiento haciendo que salgan uno encima de otro */
+    @media (max-width: 768px) {
+      .extra-info-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .extra-info-item.item-3d,
+      .extra-info-item.item-servicios {
+        grid-column: 1;
+      }
+      .extra-info-divider {
+        display: none;
+      }
+      .extra-info-title {
+        height: auto;
+        min-height: 56px;
+      }
+      .extra-info-title span {
+        white-space: normal !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -260,25 +361,28 @@
   </section>
 
     <!-- Información y acceso a Servicios Municipales -->
-  <div style="width:100%;display:flex;flex-direction:column;align-items:center;margin:2px 0 40px 0;">
-      <div style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;align-items:center;padding:0 20px;position:relative;">
-        <div style="grid-column:1 / span 2;justify-self:center;display:flex;flex-direction:column;align-items:center;text-align:center;max-width:320px;">
-          <span style="height:56px;font-size:1.15rem;font-family:'OCR A Extended',monospace;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;color:#333;"><span style="white-space:nowrap;">Visualiza distintos rincones de Aledo</span><span style="white-space:nowrap;">mediante recreaciones 3D</span></span>
+  <div class="extra-info-container">
+      <div class="extra-info-grid">
+        <div class="extra-info-item item-3d">
+          <span class="extra-info-title">
+            <span>Visualiza distintos rincones de Aledo</span>
+            <span>mediante recreaciones 3D</span>
+          </span>
           <a href="pages/recreaciones3d.html" style="display:inline-block;text-decoration:none;">
-            <div style="width:300px;height:72px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#25A6F1;color:#fff;padding:12px 28px;border-radius:10px;font-size:1.05rem;font-family:'OCR A Extended',monospace;box-shadow:0 4px 16px rgba(37,166,241,0.15);font-weight:bold;letter-spacing:2px;transition:background 0.2s;cursor:pointer;text-align:center;">
+            <div class="extra-info-button">
               RECREACIONES 3D
             </div>
           </a>
         </div>
-        <div style="grid-column:3 / span 2;justify-self:center;display:flex;flex-direction:column;align-items:center;text-align:center;max-width:320px;">
-          <span style="height:56px;font-size:1.15rem;font-family:'OCR A Extended',monospace;margin-bottom:10px;display:flex;align-items:center;justify-content:center;">Informacion de Interes y Servicios Municipales</span>
+        <div class="extra-info-item item-servicios">
+          <span class="extra-info-title">Informacion de Interes y Servicios Municipales</span>
           <a href="pages/serviciosmunicipales.html" style="display:inline-block;text-decoration:none;">
-            <div style="width:300px;height:72px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:#25A6F1;color:#fff;padding:12px 28px;border-radius:10px;font-size:1.05rem;font-family:'OCR A Extended',monospace;box-shadow:0 4px 16px rgba(37,166,241,0.15);font-weight:bold;letter-spacing:2px;transition:background 0.2s;cursor:pointer;text-align:center;">
+            <div class="extra-info-button">
               INFORMACION DE INTERES
             </div>
           </a>
         </div>
-        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:1px;height:48px;background:rgba(37,166,241,0.55);"></div>
+        <div class="extra-info-divider"></div>
       </div>
     </div>
 
